@@ -1,0 +1,35 @@
+# This workflow will run tests using node and then publish a package to NPM.js when a release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: Node.js Packages publishing
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '24'
+          cache: true
+      - run: vp check
+      - run: vp test
+      - run: vp pack
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: '24'
+          cache: true
+          registry-url: https://registry.npmjs.org
+      - run: vp run -r --filter ./packages publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
