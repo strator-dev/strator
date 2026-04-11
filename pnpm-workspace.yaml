@@ -1,0 +1,31 @@
+packages:
+  - apps/*
+  - packages/*
+  - tools/*
+  - examples/*
+
+catalog:
+  "@types/node": ^24
+  '@types/react': ^19.2.14
+  oxfmt: ^0.44.0
+  oxlint: ^1.59.0
+  react: ^19.2.5
+  typescript: ^5
+  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vite-plus: latest
+  vitest: npm:@voidzero-dev/vite-plus-test@latest
+
+catalogMode: prefer
+overrides:
+  '@strator/core': link:packages/core
+  '@strator/react': link:packages/react
+  core: link:../../Library/pnpm/global/5/node_modules/core
+  vite: "catalog:"
+  vitest: "catalog:"
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"
