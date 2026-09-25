@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: voidzero-dev/setup-vp@v1
+      - uses: voidzero-dev/setup-vp@v1.19.0
         with:
-          node-version: '24'
+          node-version: "24"
           cache: true
       - run: vp check
       - run: vp test
@@ -25,9 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: voidzero-dev/setup-vp@v1
+      - uses: voidzero-dev/setup-vp@v1.19.0
         with:
-          node-version: '24'
+          node-version: "24"
           cache: true
           registry-url: https://registry.npmjs.org
       - run: vp run -r --filter ./packages publish

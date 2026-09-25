@@ -1,17 +1,24 @@
-import type { Model } from "@strator/core";
-import { useDebugValue, useId, useState } from "react";
-import { useStratorContext } from "./Provider.tsx";
-import type { ModelCtor } from "./types.ts";
+import type { Model, ModelCtor } from "@strator/core";
+import { useId } from "react";
+import type { Selector } from "./types.ts";
+import { useModel } from "./useModel.ts";
 
-export function useLocalModel<TModel extends Model<any>, TArgs extends any[]>(
-  model: ModelCtor<TModel, TArgs>,
-  ...args: TArgs
-): TModel {
-  const ctx = useStratorContext();
+export function useLocalModel<T extends object, TModel extends Model<T>, TResult>(
+  model: ModelCtor<T, TModel>,
+  selector: Selector<T, TResult>,
+): [TModel, TResult];
+export function useLocalModel<T extends object, TModel extends Model<T>>(
+  model: ModelCtor<T, TModel>,
+): [TModel, undefined];
+export function useLocalModel<T extends object, TModel extends Model<T>, TResult>(
+  model: ModelCtor<T, TModel>,
+  selector?: Selector<T, TResult>,
+): [TModel, TResult | undefined];
+export function useLocalModel<T extends object, TModel extends Model<T>, TResult>(
+  model: ModelCtor<T, TModel>,
+  selector?: Selector<T, TResult>,
+): [TModel, TResult | undefined] {
   const id = useId();
-  const [instance] = useState<TModel>(() => ctx.getOrCreate(`${model.name}/${id}`, model, ...args));
 
-  useDebugValue(instance);
-
-  return instance;
+  return useModel(id, model, selector);
 }

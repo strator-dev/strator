@@ -2,15 +2,9 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   pack: {
-    entry: [
-      "./src/index.ts",
-      {
-        internals: "./src/internals.ts",
-        decorators: "./src/decorators/index.ts",
-      },
-    ],
+    deps: { resolveDepSubpath: true },
     dts: {
-      tsgo: true,
+      generator: "tsgo",
     },
     exports: true,
   },

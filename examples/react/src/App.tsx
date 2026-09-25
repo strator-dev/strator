@@ -1,23 +1,26 @@
-import { action } from "@strator/core/decorators";
+import { Model } from "@strator/core";
 import { useLocalModel } from "@strator/react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "./assets/vite.svg";
 import heroImg from "./assets/hero.png";
 import "./App.css";
 
-class CounterModel {
-  state = {
+type CounterModelState = {
+  count: number;
+};
+
+class CounterModel extends Model<CounterModelState> {
+  static initialState: CounterModelState = {
     count: 0,
   };
 
-  @action
   public increase() {
     this.state.count += 1;
   }
 }
 
 function App() {
-  const counter = useLocalModel(CounterModel);
+  const [counter, count] = useLocalModel(CounterModel, state => state.count);
 
   return (
     <>
@@ -34,7 +37,7 @@ function App() {
           </p>
         </div>
         <button className="counter" onClick={() => counter.increase()}>
-          Count is {counter.state.count}
+          Count is {count}
         </button>
       </section>
 

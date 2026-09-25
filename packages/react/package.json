@@ -31,16 +31,18 @@
     "prepublishOnly": "vp run build"
   },
   "devDependencies": {
-    "@strator/core": "link:../../Library/pnpm/global/5/node_modules/@strator/core",
+    "@strator/core": "link:packages/core",
     "@types/node": "^25.5.0",
     "@types/react": "catalog:",
     "@typescript/native-preview": "7.0.0-dev.20260328.1",
     "bumpp": "^11.0.1",
     "react": "catalog:",
     "typescript": "^6.0.2",
-    "vite-plus": "^0.1.14"
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
   },
   "peerDependencies": {
+    "@strator/core": ">=0.100.0",
     "react": "catalog:"
   }
 }

@@ -1,6 +1,8 @@
 import { expect, test } from "vite-plus/test";
-import { fn } from "../src/index.ts";
+import { useLocalModel, useSharedModel, useGlobalModel } from "../src/index.ts";
 
-test("fn", () => {
-  expect(fn()).toBe("Hello, tsdown!");
+test("exports React state management hooks", () => {
+  expect(typeof useLocalModel).toBe("function");
+  expect(typeof useSharedModel).toBe("function");
+  expect(typeof useGlobalModel).toBe("function");
 });

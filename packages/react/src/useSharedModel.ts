@@ -1,17 +1,25 @@
-import type { Model } from "@strator/core";
-import { useDebugValue, useState } from "react";
-import { useStratorContext } from "./Provider.tsx";
-import type { ModelCtor } from "./types.ts";
+import type { Model, ModelCtor } from "@strator/core";
+import type { Selector } from "./types.ts";
+import { useModel } from "./useModel.ts";
 
-export function useSharedModel<TModel extends Model<any>, TArgs extends any[]>(
+export function useSharedModel<T extends object, TModel extends Model<T>, TResult>(
   key: string,
-  model: ModelCtor<TModel, TArgs>,
-  ...args: TArgs
-): TModel {
-  const ctx = useStratorContext();
-  const [instance] = useState<TModel>(() => ctx.getOrCreate(`${model.name}/${key}`, model, ...args));
-
-  useDebugValue(instance);
-
-  return instance;
+  model: ModelCtor<T, TModel>,
+  selector: Selector<T, TResult>,
+): [TModel, TResult];
+export function useSharedModel<T extends object, TModel extends Model<T>>(
+  key: string,
+  model: ModelCtor<T, TModel>,
+): [TModel, undefined];
+export function useSharedModel<T extends object, TModel extends Model<T>, TResult>(
+  key: string,
+  model: ModelCtor<T, TModel>,
+  selector?: Selector<T, TResult>,
+): [TModel, TResult | undefined];
+export function useSharedModel<T extends object, TModel extends Model<T>, TResult>(
+  key: string,
+  model: ModelCtor<T, TModel>,
+  selector?: Selector<T, TResult>,
+): [TModel, TResult | undefined] {
+  return useModel(key, model, selector);
 }

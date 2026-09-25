@@ -1,5 +1,1 @@
-import type { Model } from "@strator/core";
-
-export interface ModelCtor<TModel extends Model<any>, TArgs extends any[] = any[]> {
-  new (...args: TArgs): TModel;
-}
+export type Selector<TState extends object, TResult> = (state: TState) => TResult;
