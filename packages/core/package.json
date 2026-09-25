@@ -4,13 +4,14 @@
   "description": "Core package for Strator.dev state management library",
   "homepage": "https://strator.dev",
   "bugs": {
-    "url": "https://github.com/strator/strator/issues"
+    "url": "https://github.com/strator-dev/strator/issues"
   },
   "license": "MIT",
   "author": "Lukáš Krotovič <lukas.krotovic@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/strator/strator.git"
+    "url": "git+https://github.com/strator-dev/strator.git",
+    "directory": "packages/core"
   },
   "files": [
     "dist"
