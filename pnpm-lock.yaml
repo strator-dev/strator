@@ -32,8 +32,6 @@ catalogs:
       version: 0.3.1
 
 overrides:
-  '@strator/core': link:packages/core
-  '@strator/react': link:packages/react
   vite@*: npm:@voidzero-dev/vite-plus-core@0.3.1
 
 importers:
@@ -41,10 +39,10 @@ importers:
   .:
     dependencies:
       '@strator/core':
-        specifier: link:packages/core
+        specifier: workspace:*
         version: link:packages/core
       '@strator/react':
-        specifier: link:packages/react
+        specifier: workspace:*
         version: link:packages/react
     devDependencies:
       vite:
@@ -57,10 +55,10 @@ importers:
   apps/website:
     dependencies:
       '@strator/core':
-        specifier: link:../../packages/core
+        specifier: workspace:*
         version: link:../../packages/core
       '@strator/react':
-        specifier: link:../../packages/react
+        specifier: workspace:*
         version: link:../../packages/react
       lucide-react:
         specifier: ^1.16.0
@@ -100,10 +98,10 @@ importers:
   examples/react:
     dependencies:
       '@strator/core':
-        specifier: link:../../packages/core
+        specifier: workspace:*
         version: link:../../packages/core
       '@strator/react':
-        specifier: link:../../packages/react
+        specifier: workspace:*
         version: link:../../packages/react
       react:
         specifier: ^19.2.4
@@ -176,7 +174,7 @@ importers:
   packages/react:
     devDependencies:
       '@strator/core':
-        specifier: link:../core
+        specifier: workspace:*
         version: link:../core
       '@types/node':
         specifier: ^25.5.0

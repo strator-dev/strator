@@ -10,8 +10,8 @@
     "preview": "vp preview"
   },
   "dependencies": {
-    "@strator/core": "link:../../packages/core",
-    "@strator/react": "link:../../packages/react",
+    "@strator/core": "workspace:*",
+    "@strator/react": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

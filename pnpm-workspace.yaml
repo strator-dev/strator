@@ -16,8 +16,6 @@ catalog:
 
 catalogMode: prefer
 overrides:
-  "@strator/core": link:packages/core
-  "@strator/react": link:packages/react
   vite@*: "catalog:"
 peerDependencyRules:
   allowAny:

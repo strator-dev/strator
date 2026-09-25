@@ -9,5 +9,6 @@
   },
   "env": {
     "builtin": true
-  }
+  },
+  "ignorePatterns": ["apps/website/next-env.d.ts", "apps/website/.next/**", "dist/**", "node_modules/**"]
 }

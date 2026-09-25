@@ -9,8 +9,8 @@
     "prepare": "vp config"
   },
   "dependencies": {
-    "@strator/core": "link:packages/core",
-    "@strator/react": "link:packages/react"
+    "@strator/core": "workspace:*",
+    "@strator/react": "workspace:*"
   },
   "devDependencies": {
     "vite": "catalog:",
