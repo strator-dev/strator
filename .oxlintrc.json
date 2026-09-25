@@ -5,10 +5,11 @@
     "correctness": "error"
   },
   "rules": {
-    "typescript/triple-slash-reference": "off"
+    "typescript/triple-slash-reference": "off",
+    "triple-slash-reference": "off"
   },
   "env": {
     "builtin": true
   },
-  "ignorePatterns": ["apps/website/next-env.d.ts", "apps/website/.next/**", "dist/**", "node_modules/**"]
+  "ignorePatterns": ["apps/website/next-env.d.ts", "apps/website/.next/**", "dist/**", "node_modules/**", "**/*.d.ts"]
 }

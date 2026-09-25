@@ -7,7 +7,12 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: fmtConfig as OxfmtConfig,
-  lint: { options: { typeAware: true, typeCheck: true } },
+  lint: {
+    options: { typeAware: true, typeCheck: true },
+    rules: {
+      "typescript/triple-slash-reference": "off",
+    },
+  },
   run: {
     cache: true,
   },
