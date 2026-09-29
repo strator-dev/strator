@@ -1,0 +1,78 @@
+name: 💡 Feature Request
+description: Propose a new feature, API addition, or enhancement to improve Strator.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement! Thoughtful feature requests help guide the project roadmap and enhance collective productivity.
+
+  - type: checkboxes
+    id: precheck
+    attributes:
+      label: Pre-flight Checklist
+      description: Please verify before submitting.
+      options:
+        - label: I have searched existing issues and discussions to verify this proposal is not already open.
+          required: true
+        - label: I have read the [Contributing Guide](https://github.com/strator-dev/strator/blob/main/CONTRIBUTING.md).
+          required: false
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Target Package / Area
+      description: Which part of the ecosystem does this feature apply to?
+      options:
+        - "@strator/core"
+        - "@strator/react"
+        - "@strator/vue"
+        - "apps/website (Documentation & Examples)"
+        - "Build & Tooling"
+        - "General / Cross-cutting"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem & Motivation
+      description: What problem or limitation are you experiencing? Is your feature request related to a specific use case?
+      placeholder: A clear and concise description of the motivation and use case...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution & API Design
+      description: Describe the solution you'd like to see, including hypothetical API signatures or code snippets if applicable.
+      placeholder: Describe the desired behavior or API design...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or workarounds you've considered.
+      placeholder: What alternatives have you tried or evaluated?
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, diagrams, benchmarks, or references here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am interested in implementing this feature and submitting a pull request.
+          required: false

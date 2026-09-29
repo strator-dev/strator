@@ -1,0 +1,44 @@
+name: 📖 Documentation & Website
+description: Report errors, missing guides, or improvements in the documentation and website.
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Accurate and clear documentation maximizes developer productivity and onboarding speed. Thank you for reporting doc improvements!
+
+  - type: input
+    id: page-url
+    attributes:
+      label: Page URL / File Path
+      description: Which page on the website or markdown file in the repository needs updating?
+      placeholder: e.g. https://strator.dev/... or docs/... or packages/react/README.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Current Issue / Missing Content
+      description: What is inaccurate, misleading, missing, or unclear in the current documentation?
+      placeholder: Describe the problem with the existing documentation...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested Improvement
+      description: How should the documentation be improved or rewritten?
+      placeholder: Propose the correction or new content here...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to submit a pull request to update the documentation.
+          required: false

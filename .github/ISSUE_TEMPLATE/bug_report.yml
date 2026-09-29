@@ -1,0 +1,105 @@
+name: 🐛 Bug Report
+description: File a reproducible bug report to help identify and resolve defects efficiently.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! To maximize resolution speed and minimize maintainer overhead, please ensure you provide clear reproduction steps and context.
+
+  - type: checkboxes
+    id: precheck
+    attributes:
+      label: Pre-flight Checklist
+      description: Please verify before submitting to avoid duplicate reports and unnecessary triaging.
+      options:
+        - label: I have searched existing issues and confirmed this bug has not been reported already.
+          required: true
+        - label: I am using the latest version of Strator and related workspace packages.
+          required: false
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Affected Package / Area
+      description: Which part of the Strator ecosystem is affected?
+      options:
+        - "@strator/core"
+        - "@strator/react"
+        - "@strator/vue"
+        - "apps/website (Documentation & Examples)"
+        - "Build & Tooling (Vite+ / tsdown / Rolldown)"
+        - "Other / Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened unexpectedly...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Initialize store with `...`
+        2. Call `...`
+        3. Observe error `...`
+    validations:
+      required: true
+
+  - type: input
+    id: reproduction-link
+    attributes:
+      label: Minimal Reproduction Repository / Sandbox
+      description: Please provide a link to a minimal reproduction repository, StackBlitz, or CodeSandbox. Minimal reproductions save significant investigation time and accelerate bug fixes.
+      placeholder: https://stackblitz.com/... or https://github.com/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A concise description of what you expected to happen.
+      placeholder: What should have happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: System and runtime specifications.
+      value: |
+        - **Strator Version**: 
+        - **Node.js Version**: 
+        - **Package Manager**: (pnpm / npm / yarn / bun)
+        - **Browser / Runtime**: 
+        - **OS**: (macOS / Linux / Windows)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context & Logs
+      description: Add any relevant stack traces, console logs, or screenshots.
+      placeholder: Paste console output or additional details here...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to submit a pull request with a fix and test case for this issue.
+          required: false

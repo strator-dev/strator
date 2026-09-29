@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Questions & Community Support
+    url: https://github.com/strator-dev/strator/discussions
+    about: Ask usage questions, share ideas, and discuss with the community.
+  - name: 🛡️ Security Vulnerability Reporting
+    url: https://github.com/strator-dev/strator/security/advisories/new
+    about: Privately report a security vulnerability to the maintainers.
