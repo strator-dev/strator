@@ -1,3 +1,5 @@
+![Strator Logo](./assets/logo-hd.png)
+
 # Strator
 
 **Strator** is an intuitive, class-based MVVM (Model-View-ViewModel) state management library for modern JavaScript and TypeScript applications.
