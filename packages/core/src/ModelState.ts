@@ -9,9 +9,9 @@ export interface Observer {
 
 function createProxyForObject<T extends object>(getTarget: () => T, path: Path, observer: Observer): T {
   return new Proxy({} as unknown as T, {
-    get: (_, propName, receiver) => {
+    get: (_, propName) => {
       const target = getTarget();
-      const value = Reflect.get(target, propName, receiver);
+      const value = Reflect.get(target, propName);
 
       if (Array.isArray(value)) {
         return createProxyForArray(
@@ -25,8 +25,8 @@ function createProxyForObject<T extends object>(getTarget: () => T, path: Path, 
       }
       return value;
     },
-    set: (_, propName, newValue, receiver) => {
-      const result = Reflect.set(getTarget(), propName, newValue, receiver);
+    set: (_, propName, newValue) => {
+      const result = Reflect.set(getTarget(), propName, newValue);
 
       if (result) observer.onChange?.(path);
 
@@ -44,7 +44,7 @@ function createProxyForObject<T extends object>(getTarget: () => T, path: Path, 
 
 function createProxyForArray<T>(getTarget: () => T[], path: Path, observer: Observer): T[] {
   return new Proxy({} as unknown as T[], {
-    get(_, key, receiver) {
+    get(_, key) {
       if (key === "push") {
         return (...items: T[]) => {
           const target = getTarget();
@@ -175,7 +175,7 @@ function createProxyForArray<T>(getTarget: () => T[], path: Path, observer: Obse
       }
 
       const target = getTarget();
-      const value = Reflect.get(target, key, receiver);
+      const value = Reflect.get(target, key);
 
       if (Array.isArray(value)) {
         return createProxyForArray(() => Reflect.get(getTarget(), key) as unknown[], [...path, key], observer);

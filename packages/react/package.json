@@ -36,9 +36,12 @@
     "@strator/core": "workspace:*",
     "@types/node": "^25.5.0",
     "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@typescript/native-preview": "7.0.0-dev.20260328.1",
     "bumpp": "^11.0.1",
+    "happy-dom": "^17.4.4",
     "react": "catalog:",
+    "react-dom": "catalog:",
     "typescript": "^6.0.2",
     "vite": "catalog:",
     "vite-plus": "catalog:"

@@ -11,7 +11,11 @@ export class ReactModelDispatcher implements Dispatcher {
 
   public dispatchActionFinish(_payload?: { action: string; result?: unknown }): void {}
 
-  public dispatchStateChange(_payload?: { path: Path; isArray?: boolean }): void {}
+  public dispatchStateChange(_payload?: { path: Path; isArray?: boolean }): void {
+    for (const listener of this.listeners) {
+      listener();
+    }
+  }
 
   public subscribe(callback: () => void): () => void {
     this.listeners.add(callback);

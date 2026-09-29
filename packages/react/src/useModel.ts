@@ -4,6 +4,16 @@ import { useStratorContext } from "./Provider.tsx";
 import type { Selector } from "./types.ts";
 import { shallowEqual } from "./shallowEqual.ts";
 
+function createSnapshot<T>(val: T): T {
+  if (Array.isArray(val)) {
+    return [...val] as unknown as T;
+  }
+  if (typeof val === "object" && val !== null) {
+    return { ...val };
+  }
+  return val;
+}
+
 export function useModel<T extends object, TModel extends Model<T>, TResult>(
   key: string,
   model: ModelCtor<T, TModel>,
@@ -28,10 +38,9 @@ export function useModel<T extends object, TModel extends Model<T>, TResult>(
 
   useDebugValue(instance);
 
-  const [selectedState, setSelectedState] = useState<TResult | undefined>(
-    selector ? selector(instance.getState()) : undefined,
-  );
-  const selectedStateRef = useRef<TResult | undefined>(selectedState);
+  const [, setTick] = useState(0);
+  const selectedState = selector ? selector(instance.getState()) : undefined;
+  const snapshotRef = useRef<TResult | undefined>(createSnapshot(selectedState));
 
   useEffect(() => {
     if (!selector) return undefined;
@@ -39,9 +48,9 @@ export function useModel<T extends object, TModel extends Model<T>, TResult>(
     return ctx.subscribeToStateChange(key, () => {
       const newSelectedState = selector(instance.getState());
 
-      if (shallowEqual(newSelectedState, selectedStateRef.current)) return;
-      setSelectedState(newSelectedState);
-      selectedStateRef.current = newSelectedState;
+      if (shallowEqual(newSelectedState, snapshotRef.current)) return;
+      snapshotRef.current = createSnapshot(newSelectedState);
+      setTick(t => t + 1);
     });
   }, [instance, key, selector, ctx]);
 
