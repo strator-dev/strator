@@ -8,10 +8,11 @@ By separating domain business logic and state mutations into clean, testable Typ
 
 ## Packages
 
-| Package                              | Version                                                                                                 | Description                                                                                                     |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| [`@strator/core`](./packages/core)   | [![npm](https://img.shields.io/npm/v/@strator/core.svg)](https://www.npmjs.com/package/@strator/core)   | Framework-agnostic core engine (Proxy-based change tracking, `Model<T>` base class, dispatchers)                |
-| [`@strator/react`](./packages/react) | [![npm](https://img.shields.io/npm/v/@strator/react.svg)](https://www.npmjs.com/package/@strator/react) | Official React bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `<StratorProvider>`, SSR support) |
+| Package                              | Version                                                                                                 | Description                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| [`@strator/core`](./packages/core)   | [![npm](https://img.shields.io/npm/v/@strator/core.svg)](https://www.npmjs.com/package/@strator/core)   | Framework-agnostic core engine (Proxy-based change tracking, `Model<T>` base class, dispatchers)                                 |
+| [`@strator/react`](./packages/react) | [![npm](https://img.shields.io/npm/v/@strator/react.svg)](https://www.npmjs.com/package/@strator/react) | Official React bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `<StratorProvider>`, SSR support)                  |
+| [`@strator/vue`](./packages/vue)     | [![npm](https://img.shields.io/npm/v/@strator/vue.svg)](https://www.npmjs.com/package/@strator/vue)     | Official Vue 3 bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `createStrator`, `<StratorProvider>`, SSR support) |
 
 ---
 
@@ -25,7 +26,8 @@ strator/
 │   └── website/          # Documentation and marketing website (Next.js)
 ├── packages/
 │   ├── core/             # Framework-agnostic core MVVM state engine (@strator/core)
-│   └── react/            # React integration hooks and provider (@strator/react)
+│   ├── react/            # React integration hooks and provider (@strator/react)
+│   └── vue/              # Vue 3 integration composables and plugin (@strator/vue)
 ├── examples/
 │   └── react/            # Example React application showcasing Strator
 ├── package.json          # Monorepo root configuration and workspace scripts
@@ -77,6 +79,25 @@ export function Counter() {
     </div>
   );
 }
+```
+
+### 3. Connect to Vue (`@strator/vue`)
+
+```vue
+<script setup lang="ts">
+import { useLocalModel } from "@strator/vue";
+import { CounterModel } from "./CounterModel";
+
+const [model, state] = useLocalModel(CounterModel);
+</script>
+
+<template>
+  <div>
+    <p>Count: {{ state.count }}</p>
+    <button @click="model.increase()">+1</button>
+    <button @click="model.decrease()">-1</button>
+  </div>
+</template>
 ```
 
 ---
@@ -155,7 +176,7 @@ This project adheres to **[Epoch Semantic Versioning (Epoch SemVer)](https://ant
 - **Minor releases / Epoch increments** (`0.101.0`, `0.102.0`): New features, enhancements, and non-breaking or incremental API refinements within the current epoch.
 - **Major Epoch bumps** (`1000.0.0`): Fundamental shifts or revolutionary milestone transitions.
 
-All workspace packages (`@strator/core`, `@strator/react`) are versioned synchronously.
+All workspace packages (`@strator/core`, `@strator/react`, `@strator/vue`) are versioned synchronously.
 
 ---
 
