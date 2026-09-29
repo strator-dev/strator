@@ -216,6 +216,18 @@ We welcome contributions of all kinds! To contribute to `@strator/core`:
 
 ---
 
+## Versioning
+
+This project adheres to **[Epoch Semantic Versioning (Epoch SemVer)](https://antfu.me/posts/epoch-semver)**:
+
+- **Patch releases** (`0.100.x`): Backward-compatible bug fixes and minor internal adjustments.
+- **Minor releases / Epoch increments** (`0.101.0`, `0.102.0`): New features, enhancements, and non-breaking or incremental API refinements within the current epoch.
+- **Major Epoch bumps** (`1000.0.0`): Fundamental shifts or revolutionary milestone transitions.
+
+All workspace packages (`@strator/core`, `@strator/react`) are versioned synchronously.
+
+---
+
 ## License
 
 This package is licensed under the [MIT License](https://opensource.org/licenses/MIT).

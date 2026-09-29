@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import corePackage from "@strator/core/package.json";
+import reactPackage from "@strator/react/package.json";
 
 function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -94,13 +96,13 @@ export function Footer() {
               <li className="flex items-center justify-between text-slate-300">
                 <span>@strator/core</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
-                  v0.100
+                  v{corePackage.version}
                 </span>
               </li>
               <li className="flex items-center justify-between text-slate-300">
                 <span>@strator/react</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
-                  v0.100
+                  v{reactPackage.version}
                 </span>
               </li>
               <li className="text-slate-500">

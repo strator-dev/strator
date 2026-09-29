@@ -6,6 +6,11 @@ on:
       - "v*"
       - "[0-9]*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.100.1, 0.101.0, or v0.101.0 - Epoch SemVer format)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -39,6 +44,20 @@ jobs:
       - name: Upgrade npm CLI
         run: npm install -g npm@latest
 
+      - name: Resolve release version
+        id: version
+        run: |
+          RAW_VERSION="${{ inputs.version || github.ref_name }}"
+          VERSION="${RAW_VERSION#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Target release version: $VERSION"
+
+      - name: Bump version in package.json
+        run: |
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          pnpm -r --filter "@strator/*" exec npm version "$VERSION" --no-git-tag-version --allow-same-version
+
       - name: Build packages
         run: pnpm --filter "@strator/*" build
 
@@ -50,6 +69,18 @@ jobs:
 
       - name: Publish packages to NPM
         run: pnpm -r --filter "@strator/*" publish --access public --no-git-checks
+
+      - name: Commit version bump to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet package.json packages/*/package.json; then
+            git add package.json packages/*/package.json
+            git commit -m "chore(release): bump version to v$VERSION [skip ci]"
+            git push origin HEAD:${{ github.event.repository.default_branch || 'main' }}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release and Generate Changelog
         uses: softprops/action-gh-release@v2

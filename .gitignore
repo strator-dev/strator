@@ -27,3 +27,6 @@ out
 
 # AI agent worktrees
 .claude/worktrees/
+
+# Junie plans
+.junie/plans/

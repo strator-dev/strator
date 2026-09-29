@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
+import corePackage from "@strator/core/package.json";
 
 function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -57,7 +58,7 @@ export function Header() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xl tracking-tight text-white font-mono">strator</span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  v0.100
+                  v{corePackage.version}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 hidden sm:inline-block">MVVM State for Web</span>
