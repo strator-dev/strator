@@ -26,6 +26,9 @@ jobs:
           node-version: "24"
           cache: true
 
+      - name: Build workspace packages
+        run: pnpm --filter "@strator/*" build
+
       - name: Check formatting, linter, and types
         run: vp check
 
@@ -41,6 +44,9 @@ jobs:
         with:
           node-version: "24"
           cache: true
+
+      - name: Build workspace packages
+        run: pnpm --filter "@strator/*" build
 
       - name: Run test suite
         run: vp test
