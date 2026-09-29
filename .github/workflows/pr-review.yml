@@ -1,0 +1,82 @@
+name: PR Review & Verification
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-types:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Vite+ and Node
+        uses: voidzero-dev/setup-vp@v1.19.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - name: Check formatting, linter, and types
+        run: vp check
+
+  test-suite:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Vite+ and Node
+        uses: voidzero-dev/setup-vp@v1.19.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - name: Run test suite
+        run: vp test
+
+  build-all:
+    name: Build Packages & Apps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Vite+ and Node
+        uses: voidzero-dev/setup-vp@v1.19.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - name: Build workspace packages
+        run: pnpm --filter "@strator/*" build
+
+      - name: Build documentation website
+        run: pnpm --filter website build
+
+      - name: Build example applications
+        run: pnpm --filter "@strator-examples/*" build
+
+  pr-status-gate:
+    name: PR Status Gate
+    runs-on: ubuntu-latest
+    needs: [lint-and-types, test-suite, build-all]
+    if: always()
+    steps:
+      - name: Evaluate status checks
+        run: |
+          if [[ "${{ needs.lint-and-types.result }}" != "success" || "${{ needs.test-suite.result }}" != "success" || "${{ needs.build-all.result }}" != "success" ]]; then
+            echo "::error::One or more parallel PR verification jobs failed or were cancelled."
+            exit 1
+          fi
+          echo "All parallel PR verification jobs passed successfully."
