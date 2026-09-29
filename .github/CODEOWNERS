@@ -1,0 +1,17 @@
+# Global default owners for all repository files
+* @krotovic
+
+# Core library package
+/packages/core/ @krotovic
+
+# React bindings package
+/packages/react/ @krotovic
+
+# Documentation website
+/apps/website/ @krotovic
+
+# Example applications
+/examples/ @krotovic
+
+# CI/CD workflows and GitHub automation
+/.github/ @krotovic
