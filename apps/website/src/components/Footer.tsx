@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import corePackage from "@strator/core/package.json";
 import reactPackage from "@strator/react/package.json";
 import vuePackage from "@strator/vue/package.json";
@@ -29,7 +30,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Col 1: Brand */}
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600/20 via-cyan-500/20 to-sky-400/20 border border-cyan-500/30 p-1 flex items-center justify-center shadow-md shadow-cyan-500/15">
                 <img
                   src="/brand/logo-64.png"
@@ -40,7 +41,7 @@ export function Footer() {
                 />
               </div>
               <span className="font-bold text-xl text-white font-mono tracking-tight">strator</span>
-            </div>
+            </Link>
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
               UI-framework agnostic state management based on MVVM architecture. Pure classes, reactive proxies
               dispatching updates when mounted to UI, and zero-mock testability.
@@ -63,27 +64,34 @@ export function Footer() {
             <h4 className="font-semibold text-white mb-3 text-xs uppercase tracking-wider font-mono">Documentation</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#quickstart" className="hover:text-cyan-400 transition-colors">
-                  Getting Started
+                <Link href="/react/" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <span>React Guide (@strator/react)</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/vue/" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>Vue Guide (@strator/vue)</span>
+                </Link>
+              </li>
+              <li>
+                <a href="/#architecture" className="hover:text-cyan-400 transition-colors">
+                  Architecture &amp; MVVM
                 </a>
               </li>
               <li>
-                <a href="#architecture" className="hover:text-cyan-400 transition-colors">
-                  Architecture & MVVM
-                </a>
-              </li>
-              <li>
-                <a href="#demo" className="hover:text-cyan-400 transition-colors">
+                <a href="/#demo" className="hover:text-cyan-400 transition-colors">
                   Interactive Sandbox
                 </a>
               </li>
               <li>
-                <a href="#testing" className="hover:text-cyan-400 transition-colors">
+                <a href="/#testing" className="hover:text-cyan-400 transition-colors">
                   Zero-Mock Testing Guide
                 </a>
               </li>
               <li>
-                <a href="#comparison" className="hover:text-cyan-400 transition-colors">
+                <a href="/#comparison" className="hover:text-cyan-400 transition-colors">
                   Framework Comparison
                 </a>
               </li>
@@ -101,14 +109,18 @@ export function Footer() {
                 </span>
               </li>
               <li className="flex items-center justify-between text-slate-300">
-                <span>@strator/react</span>
+                <Link href="/react/" className="hover:text-cyan-300 transition-colors underline decoration-dotted">
+                  @strator/react
+                </Link>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
                   v{reactPackage.version}
                 </span>
               </li>
               <li className="flex items-center justify-between text-slate-300">
-                <span>@strator/vue</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                <Link href="/vue/" className="hover:text-emerald-300 transition-colors underline decoration-dotted">
+                  @strator/vue
+                </Link>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
                   v{vuePackage.version}
                 </span>
               </li>

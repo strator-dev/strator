@@ -76,3 +76,86 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #1e3562;
 }
+
+/* Prism Dark Neon Theme Tokens */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #64748b; /* slate-500 */
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #94a3b8; /* slate-400 */
+}
+
+.token.tag,
+.token.tag .token.tag {
+  color: #22d3ee; /* cyan-400 */
+}
+
+.token.tag .token.punctuation {
+  color: #94a3b8; /* slate-400 */
+}
+
+.token.property,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #fdba74; /* orange-300 */
+}
+
+.token.selector,
+.token.attr-name {
+  color: #38bdf8; /* sky-400 */
+}
+
+.token.string,
+.token.attr-value,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #6ee7b7; /* emerald-300 */
+}
+
+.token.attr-value .token.punctuation,
+.token.attr-value .token.attr-equals {
+  color: #94a3b8; /* slate-400 */
+}
+
+.token.attr-value .token.value,
+.token.template-interpolation .token.expression {
+  color: #f1f5f9; /* foreground */
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #38bdf8; /* sky-400 */
+}
+
+.token.atrule,
+.token.keyword {
+  color: #c084fc; /* purple-400 */
+}
+
+.token.function,
+.token.class-name {
+  color: #fde047; /* yellow-300 */
+}
+
+.token.function-name,
+.token.method {
+  color: #60a5fa; /* blue-400 */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #22d3ee; /* cyan-400 */
+}

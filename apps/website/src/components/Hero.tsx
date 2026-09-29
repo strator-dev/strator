@@ -2,6 +2,69 @@
 
 import React, { useState } from "react";
 import { Check, Copy, ArrowRight, ShieldCheck, Zap, Code2, Sparkles, Terminal, Cpu } from "lucide-react";
+import { CodeBlock } from "./CodeBlock";
+
+const modelSnippet = `import { Model } from "@strator/core";
+
+export interface CartState {
+  items: Array<{ id: string; name: string; price: number }>;
+  discount: number;
+}
+
+export class CartModel extends Model<CartState> {
+  static initialState: CartState = { items: [], discount: 0 };
+
+  addItem(item: { id: string; name: string; price: number }) {
+    // State is proxied when mounted to UI, automatically dispatching updates
+    this.state.items.push(item);
+  }
+
+  getTotal(): number {
+    const raw = this.state.items.reduce((sum, item) => sum + item.price, 0);
+    return raw * (1 - this.state.discount);
+  }
+}`;
+
+const viewSnippet = `import { useLocalModel } from "@strator/react";
+import { CartModel } from "./CartModel";
+
+export function CartView() {
+  // Hook seamlessly provides reactive Dispatcher and binds fine-grained state
+  const [cart, items] = useLocalModel(CartModel, (s) => s.items);
+
+  return (
+    <div className="cart-box">
+      <h3>Items: {items.length}</h3>
+      <button
+        onClick={() =>
+          cart.addItem({
+            id: "1",
+            name: "Pro Plan",
+            price: 49,
+          })
+        }
+      >
+        Add Item (Total: \${cart.getTotal()})
+      </button>
+    </div>
+  );
+}`;
+
+const testSnippet = `import { describe, it, expect } from "vitest";
+import { CartModel } from "./CartModel";
+
+describe("CartModel business logic", () => {
+  it("calculates total with discount cleanly without ANY UI rendering or mocks", () => {
+    // Simply instantiate standard JavaScript class!
+    const cart = new CartModel({ items: [], discount: 0.1 });
+
+    cart.addItem({ id: "sku_1", name: "Toolkit", price: 100 });
+
+    // 100% deterministic, instant execution (<1ms)
+    expect(cart.state.items).toHaveLength(1);
+    expect(cart.getTotal()).toBe(90);
+  });
+});`;
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
@@ -9,6 +72,13 @@ export function Hero() {
 
   const copyCommand = () => {
     void navigator.clipboard.writeText("pnpm add @strator/core @strator/react");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copySnippet = () => {
+    const codeToCopy = activeTab === "model" ? modelSnippet : activeTab === "view" ? viewSnippet : testSnippet;
+    void navigator.clipboard.writeText(codeToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -125,36 +195,46 @@ export function Hero() {
             </div>
 
             {/* Tab switcher */}
-            <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-white/5 text-xs font-medium">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-white/5 text-xs font-medium">
+                <button
+                  onClick={() => setActiveTab("model")}
+                  className={`px-3 py-1.5 rounded-md transition-all ${
+                    activeTab === "model"
+                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  1. Pure Model (TS)
+                </button>
+                <button
+                  onClick={() => setActiveTab("view")}
+                  className={`px-3 py-1.5 rounded-md transition-all ${
+                    activeTab === "view"
+                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  2. UI View (React)
+                </button>
+                <button
+                  onClick={() => setActiveTab("test")}
+                  className={`px-3 py-1.5 rounded-md transition-all ${
+                    activeTab === "test"
+                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  3. Zero-Mock Unit Test
+                </button>
+              </div>
+
               <button
-                onClick={() => setActiveTab("model")}
-                className={`px-3 py-1.5 rounded-md transition-all ${
-                  activeTab === "model"
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
+                onClick={copySnippet}
+                className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/5 transition-all text-xs flex items-center gap-1.5"
+                title="Copy snippet"
               >
-                1. Pure Model (TS)
-              </button>
-              <button
-                onClick={() => setActiveTab("view")}
-                className={`px-3 py-1.5 rounded-md transition-all ${
-                  activeTab === "view"
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                2. UI View (React)
-              </button>
-              <button
-                onClick={() => setActiveTab("test")}
-                className={`px-3 py-1.5 rounded-md transition-all ${
-                  activeTab === "test"
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                3. Zero-Mock Unit Test
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
@@ -166,50 +246,7 @@ export function Hero() {
                 activeTab === "model" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none select-none"
               }`}
             >
-              <pre>
-                <code>
-                  <span className="text-purple-400">import</span> {"{"} Model {"}"}{" "}
-                  <span className="text-purple-400">from</span>{" "}
-                  <span className="text-emerald-300">"@strator/core"</span>;{"\n\n"}
-                  <span className="text-purple-400">export interface</span>{" "}
-                  <span className="text-yellow-300">CartState</span> {"{"}
-                  {"\n  "}items: Array&lt;{"{ id: string; name: string; price: number }"}&gt;;
-                  {"\n  "}discount: <span className="text-blue-300">number</span>;{"\n"}
-                  {"}"}
-                  {"\n\n"}
-                  <span className="text-purple-400">export class</span>{" "}
-                  <span className="text-yellow-300">CartModel</span> <span className="text-purple-400">extends</span>{" "}
-                  <span className="text-yellow-300">Model</span>&lt;<span className="text-yellow-300">CartState</span>
-                  &gt; {"{"}
-                  {"\n  "}
-                  <span className="text-purple-400">static</span> initialState:{" "}
-                  <span className="text-yellow-300">CartState</span> = {"{"} items: [], discount:{" "}
-                  <span className="text-orange-300">0</span> {"}"};{"\n\n  "}
-                  <span className="text-blue-400">addItem</span>(item: {"{ id: string; name: string; price: number }"}){" "}
-                  {"{"}
-                  {"\n    "}
-                  <span className="text-slate-400">
-                    // State is proxied when mounted to UI, automatically dispatching updates
-                  </span>
-                  {"\n    "}
-                  <span className="text-pink-400">this</span>.state.items.push(item);
-                  {"\n  "}
-                  {"}"}
-                  {"\n\n  "}
-                  <span className="text-blue-400">getTotal</span>(): <span className="text-blue-300">number</span> {"{"}
-                  {"\n    "}
-                  <span className="text-purple-400">const</span> raw = <span className="text-pink-400">this</span>
-                  .state.items.reduce((sum, item) =&gt; sum + item.price, <span className="text-orange-300">0</span>);
-                  {"\n    "}
-                  <span className="text-purple-400">return</span> raw * (<span className="text-orange-300">1</span> -{" "}
-                  <span className="text-pink-400">this</span>
-                  .state.discount);
-                  {"\n  "}
-                  {"}"}
-                  {"\n"}
-                  {"}"}
-                </code>
-              </pre>
+              <CodeBlock code={modelSnippet} language="typescript" />
             </div>
 
             <div
@@ -217,42 +254,7 @@ export function Hero() {
                 activeTab === "view" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none select-none"
               }`}
             >
-              <pre>
-                <code>
-                  <span className="text-purple-400">import</span> {"{"} useLocalModel {"}"}{" "}
-                  <span className="text-purple-400">from</span>{" "}
-                  <span className="text-emerald-300">"@strator/react"</span>;{"\n"}
-                  <span className="text-purple-400">import</span> {"{"} CartModel {"}"}{" "}
-                  <span className="text-purple-400">from</span> <span className="text-emerald-300">"./CartModel"</span>;
-                  {"\n\n"}
-                  <span className="text-purple-400">export function</span>{" "}
-                  <span className="text-blue-400">CartView</span>() {"{"}
-                  {"\n  "}
-                  <span className="text-slate-400">
-                    // Hook seamlessly provides reactive Dispatcher and binds fine-grained state
-                  </span>
-                  {"\n  "}
-                  <span className="text-purple-400">const</span> [cart, items] ={" "}
-                  <span className="text-yellow-300">useLocalModel</span>(CartModel, (s) =&gt; s.items);
-                  {"\n\n  "}
-                  <span className="text-purple-400">return</span> ({"\n    "}&lt;
-                  <span className="text-indigo-400">div</span> className=
-                  <span className="text-emerald-300">"cart-box"</span>&gt;
-                  {"\n      "}&lt;<span className="text-indigo-400">h3</span>&gt;Items: {"{"}items.length{"}"}&lt;/
-                  <span className="text-indigo-400">h3</span>&gt;
-                  {"\n      "}&lt;<span className="text-indigo-400">button</span> onClick=&#123;() =&gt;
-                  cart.addItem(&#123;
-                  {"\n        "}id: <span className="text-emerald-300">"1"</span>,{"\n        "}name:{" "}
-                  <span className="text-emerald-300">"Pro Plan"</span>,{"\n        "}price:{" "}
-                  <span className="text-orange-300">49</span>,{"\n      "}&#125;)&#125;&gt;
-                  {"\n        "}Add Item (Total: ${"{"}cart.getTotal(){"}"}){"\n      "}&lt;/
-                  <span className="text-indigo-400">button</span>&gt;
-                  {"\n    "}&lt;/<span className="text-indigo-400">div</span>&gt;
-                  {"\n  "});
-                  {"\n"}
-                  {"}"}
-                </code>
-              </pre>
+              <CodeBlock code={viewSnippet} language="tsx" />
             </div>
 
             <div
@@ -260,45 +262,7 @@ export function Hero() {
                 activeTab === "test" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none select-none"
               }`}
             >
-              <pre>
-                <code>
-                  <span className="text-purple-400">import</span> {"{"} describe, it, expect {"}"}{" "}
-                  <span className="text-purple-400">from</span> <span className="text-emerald-300">"vitest"</span>;
-                  {"\n"}
-                  <span className="text-purple-400">import</span> {"{"} CartModel {"}"}{" "}
-                  <span className="text-purple-400">from</span> <span className="text-emerald-300">"./CartModel"</span>;
-                  {"\n\n"}
-                  <span className="text-blue-400">describe</span>(
-                  <span className="text-emerald-300">"CartModel business logic"</span>, () =&gt; {"{"}
-                  {"\n  "}
-                  <span className="text-blue-400">it</span>(
-                  <span className="text-emerald-300">
-                    "calculates total with discount cleanly without ANY UI rendering or mocks"
-                  </span>
-                  , () =&gt; {"{"}
-                  {"\n    "}
-                  <span className="text-slate-400">// Simply instantiate standard JavaScript class!</span>
-                  {"\n    "}
-                  <span className="text-purple-400">const</span> cart = <span className="text-purple-400">new</span>{" "}
-                  <span className="text-yellow-300">CartModel</span>({"{ items: [], discount: 0.1 }"});
-                  {"\n\n    "}cart.<span className="text-blue-400">addItem</span>({"{"} id:{" "}
-                  <span className="text-emerald-300">"sku_1"</span>, name:{" "}
-                  <span className="text-emerald-300">"Toolkit"</span>, price:{" "}
-                  <span className="text-orange-300">100</span> {"}"});
-                  {"\n\n    "}
-                  <span className="text-slate-400">// 100% deterministic, instant execution (&lt;1ms)</span>
-                  {"\n    "}
-                  <span className="text-yellow-300">expect</span>(cart.state.items).toHaveLength(
-                  <span className="text-orange-300">1</span>);
-                  {"\n    "}
-                  <span className="text-yellow-300">expect</span>(cart.
-                  <span className="text-blue-400">getTotal</span>()).toBe(<span className="text-orange-300">90</span>);
-                  {"\n  "}
-                  {"}"});
-                  {"\n"}
-                  {"}"});
-                </code>
-              </pre>
+              <CodeBlock code={testSnippet} language="typescript" />
             </div>
           </div>
         </div>

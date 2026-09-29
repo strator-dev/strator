@@ -2,6 +2,22 @@
 
 import React, { useState } from "react";
 import { Activity, Sparkles, Database, Layout, RefreshCw, Cpu } from "lucide-react";
+import { CodeBlock } from "./CodeBlock";
+
+const modelCardSnippet = `class CounterModel extends Model {
+  // Pure properties
+  state = { count: 0 };
+  increase() { this.state.count++; }
+}`;
+
+const viewCardSnippet = `function View() {
+  const [m, count] = useLocalModel(
+    CounterModel, (s) => s.count
+  );
+  return <button onClick={() => m.increase()}>
+    Count: {count}
+  </button>;
+}`;
 
 export function ArchitectureDiagram() {
   const [activeStep, setActiveStep] = useState<number>(0);
@@ -80,20 +96,8 @@ export function ArchitectureDiagram() {
               Holds <code className="text-cyan-300 font-mono">state</code>, domain methods, business validation, and API
               integrations. Zero React/DOM dependencies.
             </p>
-            <div className="p-3.5 rounded-xl bg-slate-900/90 font-mono text-xs text-slate-300 border border-white/5 space-y-1">
-              <div>
-                <span className="text-purple-400">class</span> <span className="text-yellow-300">CounterModel</span>{" "}
-                <span className="text-purple-400">extends</span> <span className="text-yellow-300">Model</span> {"{"}
-              </div>
-              <div className="text-slate-400 ml-3">// Pure properties</div>
-              <div className="ml-3">
-                state = {"{"} count: <span className="text-orange-300">0</span> {"}"};
-              </div>
-              <div className="ml-3">
-                <span className="text-blue-400">increase</span>() {"{"} <span className="text-pink-400">this</span>
-                .state.count++; {"}"}
-              </div>
-              <div>{"}"}</div>
+            <div className="p-3.5 rounded-xl bg-slate-900/90 font-mono text-xs text-slate-300 border border-white/5 overflow-x-auto">
+              <CodeBlock code={modelCardSnippet} language="typescript" />
             </div>
           </div>
 
@@ -155,27 +159,8 @@ export function ArchitectureDiagram() {
               Consumes models via clean hooks (<code className="text-blue-300 font-mono">useLocalModel</code>,{" "}
               <code className="text-blue-300 font-mono">useGlobalModel</code>). Renders state and triggers actions.
             </p>
-            <div className="p-3.5 rounded-xl bg-slate-900/90 font-mono text-xs text-slate-300 border border-white/5 space-y-1">
-              <div>
-                <span className="text-purple-400">function</span> <span className="text-blue-400">View</span>() {"{"}
-              </div>
-              <div className="ml-3">
-                <span className="text-purple-400">const</span> [m, count] ={" "}
-                <span className="text-yellow-300">useLocalModel</span>(
-              </div>
-              <div className="ml-6">
-                <span className="text-yellow-300">CounterModel</span>, (s) =&gt; s.count
-              </div>
-              <div className="ml-3">);</div>
-              <div className="ml-3">
-                <span className="text-purple-400">return</span> &lt;
-                <span className="text-indigo-400">button</span> onClick=&#123;() =&gt; m.
-                <span className="text-blue-400">increase</span>()&#125;&gt;
-              </div>
-              <div className="ml-6">
-                Count: &#123;count&#125;&lt;/<span className="text-indigo-400">button</span>&gt;;
-              </div>
-              <div>{"}"}</div>
+            <div className="p-3.5 rounded-xl bg-slate-900/90 font-mono text-xs text-slate-300 border border-white/5 overflow-x-auto">
+              <CodeBlock code={viewCardSnippet} language="tsx" />
             </div>
           </div>
         </div>

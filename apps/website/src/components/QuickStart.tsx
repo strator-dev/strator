@@ -2,6 +2,41 @@
 
 import React, { useState } from "react";
 import { Copy, Check, BookOpen } from "lucide-react";
+import { CodeBlock } from "./CodeBlock";
+
+const modelSnippet = `import { Model } from "@strator/core";
+
+export interface CounterState {
+  count: number;
+}
+
+export class CounterModel extends Model<CounterState> {
+  static initialState: CounterState = { count: 0 };
+
+  public increase() {
+    this.state.count += 1;
+  }
+
+  public reset() {
+    this.state.count = 0;
+  }
+}`;
+
+const viewSnippet = `import React from "react";
+import { useLocalModel } from "@strator/react";
+import { CounterModel } from "./CounterModel";
+
+export function Counter() {
+  const [model, count] = useLocalModel(CounterModel, (state) => state.count);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => model.increase()}>Increment</button>
+      <button onClick={() => model.reset()}>Reset</button>
+    </div>
+  );
+}`;
 
 export function QuickStart() {
   const [pkgManager, setPkgManager] = useState<"pnpm" | "npm" | "yarn" | "bun">("pnpm");
@@ -98,40 +133,7 @@ export function QuickStart() {
             </p>
 
             <div className="p-4 rounded-xl bg-slate-950 font-mono text-xs sm:text-sm text-slate-300 border border-white/5 overflow-x-auto">
-              <pre>
-                <code>
-                  <span className="text-purple-400">import</span> {"{"} <span className="text-yellow-300">Model</span>{" "}
-                  {"}"} <span className="text-purple-400">from</span>{" "}
-                  <span className="text-emerald-300">"@strator/core"</span>;{"\n\n"}
-                  <span className="text-purple-400">export interface</span>{" "}
-                  <span className="text-yellow-300">CounterState</span> {"{"}
-                  {"\n  "}count: <span className="text-blue-300">number</span>;{"\n"}
-                  {"}"}
-                  {"\n\n"}
-                  <span className="text-purple-400">export class</span>{" "}
-                  <span className="text-yellow-300">CounterModel</span> <span className="text-purple-400">extends</span>{" "}
-                  <span className="text-yellow-300">Model</span>&lt;
-                  <span className="text-yellow-300">CounterState</span>&gt; {"{"}
-                  {"\n  "}
-                  <span className="text-purple-400">static</span> initialState:{" "}
-                  <span className="text-yellow-300">CounterState</span> = {"{"} count:{" "}
-                  <span className="text-orange-300">0</span> {"}"};{"\n\n  "}
-                  <span className="text-purple-400">public</span> <span className="text-blue-400">increase</span>(){" "}
-                  {"{"}
-                  {"\n    "}
-                  <span className="text-pink-400">this</span>.state.count += <span className="text-orange-300">1</span>;
-                  {"\n  "}
-                  {"}"}
-                  {"\n\n  "}
-                  <span className="text-purple-400">public</span> <span className="text-blue-400">reset</span>() {"{"}
-                  {"\n    "}
-                  <span className="text-pink-400">this</span>.state.count = <span className="text-orange-300">0</span>;
-                  {"\n  "}
-                  {"}"}
-                  {"\n"}
-                  {"}"}
-                </code>
-              </pre>
+              <CodeBlock code={modelSnippet} language="typescript" />
             </div>
           </div>
 
@@ -154,40 +156,59 @@ export function QuickStart() {
             </p>
 
             <div className="p-4 rounded-xl bg-slate-950 font-mono text-xs sm:text-sm text-slate-300 border border-white/5 overflow-x-auto">
-              <pre>
-                <code>
-                  <span className="text-purple-400">import</span> <span className="text-yellow-300">React</span>{" "}
-                  <span className="text-purple-400">from</span> <span className="text-emerald-300">"react"</span>;{"\n"}
-                  <span className="text-purple-400">import</span> {"{"}{" "}
-                  <span className="text-yellow-300">useLocalModel</span> {"}"}{" "}
-                  <span className="text-purple-400">from</span>{" "}
-                  <span className="text-emerald-300">"@strator/react"</span>;{"\n"}
-                  <span className="text-purple-400">import</span> {"{"}{" "}
-                  <span className="text-yellow-300">CounterModel</span> {"}"}{" "}
-                  <span className="text-purple-400">from</span>{" "}
-                  <span className="text-emerald-300">"./CounterModel"</span>;{"\n\n"}
-                  <span className="text-purple-400">export function</span>{" "}
-                  <span className="text-blue-400">Counter</span>() {"{"}
-                  {"\n  "}
-                  <span className="text-purple-400">const</span> [model, count] ={" "}
-                  <span className="text-yellow-300">useLocalModel</span>(
-                  <span className="text-yellow-300">CounterModel</span>, (state) =&gt; state.count);{"\n\n  "}
-                  <span className="text-purple-400">return</span> ({"\n    "}
-                  &lt;<span className="text-indigo-400">div</span>&gt;{"\n      "}
-                  &lt;<span className="text-indigo-400">p</span>&gt;Count: {"{"}count{"}"}&lt;/
-                  <span className="text-indigo-400">p</span>&gt;{"\n      "}
-                  &lt;<span className="text-indigo-400">button</span> onClick=&#123;() =&gt; model.
-                  <span className="text-blue-400">increase</span>()&#125;&gt;Increment&lt;/
-                  <span className="text-indigo-400">button</span>&gt;{"\n      "}
-                  &lt;<span className="text-indigo-400">button</span> onClick=&#123;() =&gt; model.
-                  <span className="text-blue-400">reset</span>()&#125;&gt;Reset&lt;/
-                  <span className="text-indigo-400">button</span>&gt;{"\n    "}
-                  &lt;/<span className="text-indigo-400">div</span>&gt;{"\n  "}
-                  );{"\n"}
-                  {"}"}
-                </code>
-              </pre>
+              <CodeBlock code={viewSnippet} language="tsx" />
             </div>
+          </div>
+
+          {/* Dedicated Framework Guides Banner */}
+          <div className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <a
+              href="/react/"
+              className="glass-panel p-6 rounded-2xl border border-cyan-500/30 hover:border-cyan-400/60 bg-gradient-to-br from-cyan-950/20 via-slate-900/60 to-slate-950/80 transition-all hover:scale-[1.01] group shadow-lg shadow-cyan-950/30"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400 animate-pulse" />
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-cyan-400">
+                    React 18 &amp; 19 Guide
+                  </span>
+                </div>
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                  @strator/react
+                </span>
+              </div>
+              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
+                React Bindings Documentation &rarr;
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Learn about selector diffing with shallowEqual, local &amp; shared model hooks, SSR hydration, and
+                memory best practices.
+              </p>
+            </a>
+
+            <a
+              href="/vue/"
+              className="glass-panel p-6 rounded-2xl border border-emerald-500/30 hover:border-emerald-400/60 bg-gradient-to-br from-emerald-950/20 via-slate-900/60 to-slate-950/80 transition-all hover:scale-[1.01] group shadow-lg shadow-emerald-950/30"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse" />
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                    Vue 3 Guide
+                  </span>
+                </div>
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  @strator/vue
+                </span>
+              </div>
+              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">
+                Vue Bindings Documentation &rarr;
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Learn about createStrator plugin, native reactive proxies, syncState recursive syncing, and Composition
+                API usage.
+              </p>
+            </a>
           </div>
         </div>
       </div>
