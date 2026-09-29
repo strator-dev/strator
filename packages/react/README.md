@@ -8,10 +8,10 @@ Official React bindings for **Strator**, an intuitive, class-based MVVM (Model-V
 
 ## Features
 
-- **Component & Application Lifecycles**:
-  - `useLocalModel`: Component-scoped model instance tied to the component's lifecycle.
-  - `useSharedModel`: Keyed model instance shared across a specific subtree or identifiable by a string key.
-  - `useGlobalModel`: Singleton model instance shared globally across the entire provider.
+- **Automatic Lifecycle & Reference Counting**:
+  - `useLocalModel`: Component-scoped model instance automatically disposed and cleaned up from memory when the component unmounts.
+  - `useSharedModel`: Keyed model instance reference-counted across active consumers, shared while any component is mounted and automatically disposed once all consumers unmount.
+  - `useGlobalModel`: Singleton model instance shared globally and reference-counted across consumers under the provider.
 - **Selective Re-rendering**: Subscribe to specific state slices with selector functions and built-in shallow equality comparison to prevent unnecessary re-renders.
 - **Direct Domain Method Invocations**: Trigger state updates by directly calling model methods without action dispatchers or reducer boilerplate.
 - **Full SSR & Hydration Support**: Populate initial state maps on `<StratorProvider>` during server-side rendering and smoothly hydrate client-side state.
@@ -210,11 +210,11 @@ const html = renderToString(
 
 ## API Reference
 
-- **`useLocalModel(ModelClass, selector?)`**: Creates a component-local instance of the model.
-- **`useGlobalModel(ModelClass, selector?)`**: Accesses or creates a global singleton model instance keyed by class name.
-- **`useSharedModel(key, ModelClass, selector?)`**: Accesses or creates a shared model instance identified by a string key.
-- **`<Provider initialState={...}>` / `<StratorProvider>`**: Context provider managing model instances, lifecycle dispatchers, and SSR initial state.
-- **`useStratorContext()`**: Accesses the active Strator context, dispatcher, and state snapshot helper (`getState()`).
+- **`useLocalModel(ModelClass, selector?)`**: Creates a component-local instance of the model that automatically disposes when the component unmounts.
+- **`useGlobalModel(ModelClass, selector?)`**: Accesses or creates a global singleton model instance keyed by class name, reference-counted across active consumers.
+- **`useSharedModel(key, ModelClass, selector?)`**: Accesses or creates a shared model instance identified by a string key, reference-counted across active consumers.
+- **`<Provider initialState={...}>` / `<StratorProvider>`**: Context provider managing model instances, reference counts, lifecycle dispatchers, and SSR initial state.
+- **`useStratorContext()`**: Accesses the active Strator context, dispatcher, reference counts, model disposal helpers, and state snapshot helper (`getState()`).
 
 ---
 

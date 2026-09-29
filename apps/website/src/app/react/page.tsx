@@ -84,6 +84,7 @@ export function App() {
     tips: [
       "Always supply a selector if your component needs to re-render when Model state changes.",
       "If selector is omitted, returns [model, undefined] and does not re-render on state updates.",
+      "Automatically disposed and cleaned up from memory when the component unmounts.",
       "Ideal for form state, dropdowns, modals, and component-scoped business logic.",
     ],
     example: `import { useLocalModel } from "@strator/react";
@@ -132,6 +133,7 @@ export function Counter() {
     },
     tips: [
       "Enables multi-component workflows (e.g. step-by-step wizard, table + detail pane) to coordinate seamlessly.",
+      "Reference-counted across active consumers: remains alive while any consumer is mounted and automatically disposes when all unmount.",
       "Multiple components can select different slices of the same shared model with independent re-renders.",
     ],
     example: `// Component A
@@ -167,6 +169,7 @@ const [cart, totalPrice] = useSharedModel("active-cart", CartModel, s => s.total
     },
     tips: [
       "Perfect for application-wide singletons: AuthModel, ThemeModel, SettingsModel, NotificationsModel.",
+      "Reference-counted across components: stays active while consumers exist and disposes when all consumers unmount.",
       "Under minification, ensure class names remain stable or use useSharedModel if minifier mangles names.",
     ],
     example: `import { useGlobalModel } from "@strator/react";
@@ -209,15 +212,20 @@ const reactMechanicsSteps: FlowStep[] = [
   {
     step: 1,
     title: "Registration & Mounting",
-    subtitle: "Context Registry & Dispatcher Attachment",
+    subtitle: "Context Registry, Dispatcher Attachment & Ref Counting",
     description:
-      "When a hook like useLocalModel or useGlobalModel executes, it checks the Provider's models Map ref for an existing instance under the specified key (or useId()). If missing, it instantiates the Model class and registers it with the ReactDispatcher.",
+      "When a hook like useLocalModel, useSharedModel, or useGlobalModel executes, it checks the Provider's models Map ref for an existing instance under the specified key (or useId()). If missing, it instantiates the Model class and registers it with the ReactDispatcher. On mount, it increments the model's reference count, and on unmount decrements it, automatically disposing the model and dispatcher once all consumers unmount.",
     badge: "Mount Phase",
-    snippet: `// React binding resolves instance
+    snippet: `// React binding resolves instance and tracks reference count
 const instance = models.current.has(key)
   ? models.current.get(key)
   : new ModelClass();
-models.current.set(key, instance);`,
+models.current.set(key, instance);
+// Retain on mount, release & auto-dispose on unmount
+useEffect(() => {
+  ctx.retainModel(key);
+  return () => ctx.releaseModel(key);
+}, [ctx, key]);`,
   },
   {
     step: 2,
@@ -259,31 +267,6 @@ return <div>{count}</div>;`,
 ];
 
 const reactLimitations: LimitationItem[] = [
-  {
-    id: "local-model-retention",
-    title: "Local Model Lifecycle in Provider Map",
-    severity: "warning",
-    summary:
-      "Models instantiated via useLocalModel remain in the nearest <StratorProvider> Map ref for the lifetime of that Provider.",
-    details:
-      "useLocalModel generates a unique key per mount via React 18's useId(). The instance is stored in models.current. Since useModel does not automatically delete keys from models.current on unmount, repeated mounting of short-lived components can accumulate entries in the Provider's Map.",
-    impact:
-      "In extremely long-lived single-page apps with millions of dynamically mounted/unmounted list items, memory usage in the Provider Map can grow gradually if models are not scoped.",
-    recommendation:
-      "Scope <StratorProvider> close to dynamic views or subtrees where local models are used, or reset provider state during route changes.",
-    badSnippet: `// Single root provider with millions of short-lived row components
-<StratorProvider>
-  {items.map(i => <EphemeralRow key={i.id} />)}
-</StratorProvider>`,
-    goodSnippet: `// Subtree-scoped provider that naturally garbage collects on unmount
-function EphemeralSection() {
-  return (
-    <StratorProvider>
-      <SubtreeContent />
-    </StratorProvider>
-  );
-}`,
-  },
   {
     id: "mandatory-selector",
     title: "Selector Requirement for Reactive Re-renders",

@@ -13,9 +13,13 @@ export interface ProviderProps {
 export interface StratorContext {
   dispatcher: RefObject<ReactDispatcher>;
   models: RefObject<Map<string, Model<any>>>;
+  refCounts: RefObject<Map<string, number>>;
   getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel;
   subscribeToStateChange(key: string, callback: () => void): () => void;
   getState(): Record<string, any>;
+  retainModel(key: string): void;
+  releaseModel(key: string): void;
+  disposeModel(key: string): void;
 }
 
 const context = createContext<StratorContext | undefined>(undefined);
@@ -23,6 +27,7 @@ const context = createContext<StratorContext | undefined>(undefined);
 export function Provider({ children, initialState }: ProviderProps) {
   const dispatcher = useRef(new ReactDispatcher());
   const models = useRef<Map<string, Model<any>>>(new Map());
+  const refCounts = useRef<Map<string, number>>(new Map());
   const initialStateRef = useRef<InitialStateMap | undefined>(initialState);
   initialStateRef.current = initialState;
 
@@ -75,10 +80,31 @@ export function Provider({ children, initialState }: ProviderProps) {
     return ctor.initialState;
   };
 
-  const ctx = useMemo<StratorContext>(
-    () => ({
+  const ctx = useMemo<StratorContext>(() => {
+    const disposeModel = (key: string): void => {
+      models.current.delete(key);
+      dispatcher.current.removeDispatcher(key);
+      refCounts.current.delete(key);
+    };
+
+    const retainModel = (key: string): void => {
+      const current = refCounts.current.get(key) ?? 0;
+      refCounts.current.set(key, current + 1);
+    };
+
+    const releaseModel = (key: string): void => {
+      const current = refCounts.current.get(key) ?? 0;
+      if (current <= 1) {
+        disposeModel(key);
+      } else {
+        refCounts.current.set(key, current - 1);
+      }
+    };
+
+    return {
       dispatcher,
       models,
+      refCounts,
       getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel {
         if (models.current.has(key)) {
           return models.current.get(key) as TModel;
@@ -98,9 +124,11 @@ export function Provider({ children, initialState }: ProviderProps) {
         }
         return result;
       },
-    }),
-    [],
-  );
+      retainModel,
+      releaseModel,
+      disposeModel,
+    };
+  }, []);
 
   return <context.Provider value={ctx}>{children}</context.Provider>;
 }

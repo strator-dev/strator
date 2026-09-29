@@ -10,11 +10,11 @@ By separating domain business logic and state mutations into clean, testable Typ
 
 ## Packages
 
-| Package                              | Version                                                                                                 | Description                                                                                                                      |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [`@strator/core`](./packages/core)   | [![npm](https://img.shields.io/npm/v/@strator/core.svg)](https://www.npmjs.com/package/@strator/core)   | Framework-agnostic core engine (Proxy-based change tracking, `Model<T>` base class, dispatchers)                                 |
-| [`@strator/react`](./packages/react) | [![npm](https://img.shields.io/npm/v/@strator/react.svg)](https://www.npmjs.com/package/@strator/react) | Official React bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `<StratorProvider>`, SSR support)                  |
-| [`@strator/vue`](./packages/vue)     | [![npm](https://img.shields.io/npm/v/@strator/vue.svg)](https://www.npmjs.com/package/@strator/vue)     | Official Vue 3 bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `createStrator`, `<StratorProvider>`, SSR support) |
+| Package                              | Version                                                                                                 | Description                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@strator/core`](./packages/core)   | [![npm](https://img.shields.io/npm/v/@strator/core.svg)](https://www.npmjs.com/package/@strator/core)   | Framework-agnostic core engine (Proxy-based change tracking, `Model<T>` base class, dispatchers)                                             |
+| [`@strator/react`](./packages/react) | [![npm](https://img.shields.io/npm/v/@strator/react.svg)](https://www.npmjs.com/package/@strator/react) | Official React bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `<StratorProvider>`, reference-counted lifecycle, SSR support) |
+| [`@strator/vue`](./packages/vue)     | [![npm](https://img.shields.io/npm/v/@strator/vue.svg)](https://www.npmjs.com/package/@strator/vue)     | Official Vue 3 bindings (`useLocalModel`, `useSharedModel`, `useGlobalModel`, `createStrator`, `<StratorProvider>`, SSR support)             |
 
 ---
 

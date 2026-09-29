@@ -54,5 +54,12 @@ export function useModel<T extends object, TModel extends Model<T>, TResult>(
     });
   }, [instance, key, selector, ctx]);
 
+  useEffect(() => {
+    ctx.retainModel(key);
+    return () => {
+      ctx.releaseModel(key);
+    };
+  }, [ctx, key]);
+
   return [instance, selectedState];
 }

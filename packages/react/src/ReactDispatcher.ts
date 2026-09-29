@@ -37,4 +37,8 @@ export class ReactDispatcher {
     const dispatcher = this.getDispatcher(key);
     return dispatcher.subscribe(callback);
   }
+
+  public removeDispatcher(key: string): void {
+    this.dispatchers.delete(key);
+  }
 }
