@@ -3,6 +3,7 @@
 import React from "react";
 import corePackage from "@strator/core/package.json";
 import reactPackage from "@strator/react/package.json";
+import vuePackage from "@strator/vue/package.json";
 
 function GithubIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -105,8 +106,11 @@ export function Footer() {
                   v{reactPackage.version}
                 </span>
               </li>
-              <li className="text-slate-500">
-                <span>@strator/vue (coming soon)</span>
+              <li className="flex items-center justify-between text-slate-300">
+                <span>@strator/vue</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                  v{vuePackage.version}
+                </span>
               </li>
               <li className="text-slate-500">
                 <span>@strator/svelte (coming soon)</span>
