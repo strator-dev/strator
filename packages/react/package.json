@@ -1,6 +1,6 @@
 {
   "name": "@strator/react",
-  "version": "0.100.0",
+  "version": "100.0.0",
   "description": "React bindings for Strator.dev state management library",
   "homepage": "https://strator.dev/react",
   "bugs": {

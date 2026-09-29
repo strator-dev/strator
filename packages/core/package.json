@@ -1,6 +1,6 @@
 {
   "name": "@strator/core",
-  "version": "0.100.0",
+  "version": "100.0.0",
   "description": "Core package for Strator.dev state management library",
   "homepage": "https://strator.dev",
   "bugs": {
