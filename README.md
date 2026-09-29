@@ -83,7 +83,7 @@ export function Counter() {
 
 ## Contributing
 
-We welcome contributions from the community! To set up the project locally and contribute:
+We welcome contributions from the community! Please read our detailed [Contribution Guidelines](./CONTRIBUTING.md) for full setup instructions, workflow details, and code review criteria.
 
 ### 1. Prerequisites
 
