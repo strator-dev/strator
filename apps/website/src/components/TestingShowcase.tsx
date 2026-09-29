@@ -2,6 +2,46 @@
 
 import React, { useState } from "react";
 import { ShieldCheck, Play, CheckCircle2, Clock, XCircle, Zap } from "lucide-react";
+import { CodeBlock } from "./CodeBlock";
+
+const traditionalSnippet = `// Requires JSDOM, React wrappers, and heavy providers
+import { render, screen, fireEvent } from "@testing-library/react";
+import { Provider } from "react-redux";
+import { store } from "../store";
+import { CheckoutModal } from "../components/CheckoutModal";
+
+test("applies discount coupon", async () => {
+  // 1. Heavy DOM mount
+  render(
+    <Provider store={store}>
+      <CheckoutModal />
+    </Provider>
+  );
+
+  // 2. Brittle selector queries & async DOM events
+  const input = screen.getByPlaceholderText(/coupon/i);
+  fireEvent.change(input, { target: { value: "SAVE20" } });
+  fireEvent.click(screen.getByRole("button", { name: /apply/i }));
+
+  // 3. Slow assertions on rendered text
+  expect(await screen.findByText(/\\$80.00/)).toBeInTheDocument();
+});`;
+
+const stratorSnippet = `// Pure JavaScript. No DOM. No React harness. No Mocks.
+import { describe, it, expect } from "vitest";
+import { CheckoutModel } from "../models/CheckoutModel";
+
+it("applies discount coupon", () => {
+  // 1. Direct class instantiation with state
+  const model = new CheckoutModel({ cartTotal: 100, discount: 0 });
+
+  // 2. Direct method invocation
+  model.applyCoupon("SAVE20");
+
+  // 3. Pure deterministic state & computed assertions
+  expect(model.state.discount).toBe(0.2);
+  expect(model.getFinalPrice()).toBe(80);
+});`;
 
 export function TestingShowcase() {
   const [isRunning, setIsRunning] = useState(false);
@@ -52,64 +92,8 @@ export function TestingShowcase() {
               </span>
             </div>
 
-            <div className="p-5 font-mono text-xs leading-relaxed text-slate-300 space-y-2 overflow-x-auto bg-[#080c14] flex-1">
-              <div className="text-slate-500">// Requires JSDOM, React wrappers, and heavy providers</div>
-              <div>
-                <span className="text-purple-400">import</span> {"{"}{" "}
-                <span className="text-yellow-300">render, screen, fireEvent</span> {"}"}{" "}
-                <span className="text-purple-400">from</span>{" "}
-                <span className="text-emerald-300">"@testing-library/react"</span>;
-              </div>
-              <div>
-                <span className="text-purple-400">import</span> {"{"} <span className="text-yellow-300">Provider</span>{" "}
-                {"}"} <span className="text-purple-400">from</span>{" "}
-                <span className="text-emerald-300">"react-redux"</span>;
-              </div>
-              <div>
-                <span className="text-purple-400">import</span> {"{"} store {"}"}{" "}
-                <span className="text-purple-400">from</span> <span className="text-emerald-300">"../store"</span>;
-              </div>
-              <div>
-                <span className="text-purple-400">import</span> {"{"}{" "}
-                <span className="text-yellow-300">CheckoutModal</span> {"}"}{" "}
-                <span className="text-purple-400">from</span>{" "}
-                <span className="text-emerald-300">"../components/CheckoutModal"</span>;
-              </div>
-              <div className="my-2 border-t border-white/5" />
-              <div>
-                <span className="text-blue-400">test</span>(
-                <span className="text-emerald-300">"applies discount coupon"</span>,{" "}
-                <span className="text-purple-400">async</span> () =&gt; {"{"}
-              </div>
-              <div className="text-slate-400 ml-4">// 1. Heavy DOM mount</div>
-              <div className="ml-4">
-                <span className="text-blue-400">render</span>(&lt;
-                <span className="text-indigo-400">Provider</span> store=&#123;store&#125;&gt;&lt;
-                <span className="text-indigo-400">CheckoutModal</span> /&gt;&lt;/
-                <span className="text-indigo-400">Provider</span>&gt;);
-              </div>
-              <div className="text-slate-400 ml-4">// 2. Brittle selector queries & async DOM events</div>
-              <div className="ml-4">
-                <span className="text-purple-400">const</span> input = screen.
-                <span className="text-blue-400">getByPlaceholderText</span>(
-                <span className="text-emerald-300">/coupon/i</span>);
-              </div>
-              <div className="ml-4">
-                fireEvent.<span className="text-blue-400">change</span>(input, {"{"} target: {"{"} value:{" "}
-                <span className="text-emerald-300">'SAVE20'</span> {"}"} {"}"});
-              </div>
-              <div className="ml-4">
-                fireEvent.<span className="text-blue-400">click</span>(screen.
-                <span className="text-blue-400">getByRole</span>(<span className="text-emerald-300">"button"</span>,{" "}
-                {"{"} name: <span className="text-emerald-300">/apply/i</span> {"}"}));
-              </div>
-              <div className="text-slate-400 ml-4">// 3. Slow assertions on rendered text</div>
-              <div className="ml-4">
-                <span className="text-yellow-300">expect</span>(<span className="text-purple-400">await</span> screen.
-                <span className="text-blue-400">findByText</span>(<span className="text-emerald-300">/\$80.00/</span>)).
-                <span className="text-blue-400">toBeInTheDocument</span>();
-              </div>
-              <div>{"}"});</div>
+            <div className="p-5 font-mono text-xs leading-relaxed text-slate-300 overflow-x-auto bg-[#080c14] flex-1">
+              <CodeBlock code={traditionalSnippet} language="tsx" />
             </div>
 
             <div className="p-4 bg-rose-950/20 border-t border-rose-500/20 text-xs text-rose-300 flex items-start gap-2 mt-auto shrink-0">
@@ -132,47 +116,8 @@ export function TestingShowcase() {
               </span>
             </div>
 
-            <div className="p-5 font-mono text-xs leading-relaxed text-slate-300 space-y-2 overflow-x-auto bg-[#080c14] flex-1">
-              <div className="text-slate-500">// Pure JavaScript. No DOM. No React harness. No Mocks.</div>
-              <div>
-                <span className="text-purple-400">import</span> {"{"}{" "}
-                <span className="text-yellow-300">describe, it, expect</span> {"}"}{" "}
-                <span className="text-purple-400">from</span> <span className="text-emerald-300">"vitest"</span>;
-              </div>
-              <div>
-                <span className="text-purple-400">import</span> {"{"}{" "}
-                <span className="text-yellow-300">CheckoutModel</span> {"}"}{" "}
-                <span className="text-purple-400">from</span>{" "}
-                <span className="text-emerald-300">"../models/CheckoutModel"</span>;
-              </div>
-              <div className="my-2 border-t border-white/5" />
-              <div>
-                <span className="text-blue-400">it</span>(
-                <span className="text-emerald-300">"applies discount coupon"</span>, () =&gt; {"{"}
-              </div>
-              <div className="text-slate-400 ml-4">// 1. Direct class instantiation with state</div>
-              <div className="ml-4">
-                <span className="text-purple-400">const</span> model = <span className="text-purple-400">new</span>{" "}
-                <span className="text-yellow-300">CheckoutModel</span>({"{"} cartTotal:{" "}
-                <span className="text-orange-300">100</span>, discount: <span className="text-orange-300">0</span> {"}"}
-                );
-              </div>
-              <div className="text-slate-400 ml-4">// 2. Direct method invocation</div>
-              <div className="ml-4">
-                model.<span className="text-blue-400">applyCoupon</span>(
-                <span className="text-emerald-300">"SAVE20"</span>);
-              </div>
-              <div className="text-slate-400 ml-4">// 3. Pure deterministic state & computed assertions</div>
-              <div className="ml-4">
-                <span className="text-yellow-300">expect</span>(model.state.discount).
-                <span className="text-blue-400">toBe</span>(<span className="text-orange-300">0.2</span>);
-              </div>
-              <div className="ml-4">
-                <span className="text-yellow-300">expect</span>(model.
-                <span className="text-blue-400">getFinalPrice</span>()).
-                <span className="text-blue-400">toBe</span>(<span className="text-orange-300">80</span>);
-              </div>
-              <div>{"}"});</div>
+            <div className="p-5 font-mono text-xs leading-relaxed text-slate-300 overflow-x-auto bg-[#080c14] flex-1">
+              <CodeBlock code={stratorSnippet} language="typescript" />
             </div>
 
             <div className="p-4 bg-emerald-950/20 border-t border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2 mt-auto shrink-0">
@@ -220,7 +165,22 @@ export function TestingShowcase() {
           {/* Test Results Output */}
           {hasRun && (
             <div className="mt-6 p-4 rounded-xl bg-slate-950 border border-emerald-500/30 font-mono text-left text-xs animate-fade-in space-y-1.5">
-              <div className="text-emerald-400 font-bold flex items-center gap-2">
+              <div className="flex items-center justify-between text-emerald-400 border-b border-emerald-500/20 pb-2">
+                <span className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" /> PASS src/tests/models.spec.ts (100 tests)
+                </span>
+                <span className="text-slate-400">{testTime}ms</span>
+              </div>
+              <div className="text-slate-400 pt-1">
+                Test Files <span className="text-emerald-400 font-bold">1 passed</span> (1)
+              </div>
+              <div className="text-slate-400">
+                Tests <span className="text-emerald-400 font-bold">100 passed</span> (100)
+              </div>
+              <div className="text-slate-400">
+                Time <span className="text-slate-200 font-bold">{testTime}ms</span> (business logic execution only)
+              </div>
+              <div className="text-emerald-400 font-bold flex items-center gap-2 pt-1">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>✓ 100/100 model test files passed (100%)</span>
               </div>

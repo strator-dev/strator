@@ -269,7 +269,7 @@ This project adheres to **[Epoch Semantic Versioning (Epoch SemVer)](https://ant
 - **Minor releases / Epoch increments** (`0.101.0`, `0.102.0`): New features, enhancements, and non-breaking or incremental API refinements within the current epoch.
 - **Major Epoch bumps** (`1000.0.0`): Fundamental shifts or revolutionary milestone transitions.
 
-All workspace packages (`@strator/core`, `@strator/react`) are versioned synchronously.
+All workspace packages (`@strator/core`, `@strator/react`, `@strator/vue`) are versioned synchronously.
 
 ---
 

@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@strator/core": "workspace:*",
-    "@strator/react": "workspace:*"
+    "@strator/react": "workspace:*",
+    "@strator/vue": "workspace:*"
   },
   "devDependencies": {
     "vite": "catalog:",
