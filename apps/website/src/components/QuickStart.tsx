@@ -181,8 +181,8 @@ export function QuickStart() {
                 React Bindings Documentation &rarr;
               </h4>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                Learn about selector diffing with shallowEqual, local &amp; shared model hooks, SSR hydration, and
-                memory best practices.
+                Learn about selector snapshot diffing, local &amp; shared model hooks, SSR hydration, and memory best
+                practices.
               </p>
             </a>
 

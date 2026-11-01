@@ -71,7 +71,7 @@ describe("React state updates", () => {
     expect(container.textContent).toBe("2");
   });
 
-  test("useSharedModel and useGlobalModel re-render inside StrictMode and dispose on real unmount", () => {
+  test("useSharedModel and useGlobalModel re-render inside StrictMode and dispose on real unmount", async () => {
     let ctx!: StratorContext;
     let shared!: TodoModel;
     let global!: TodoModel;
@@ -107,7 +107,7 @@ describe("React state updates", () => {
     expect(container.textContent).toBe("12");
     expect(ctx.refCounts.current.get("shared")).toBe(1);
 
-    act(() => root.render(<App show={false} />));
+    await act(async () => root.render(<App show={false} />));
     expect(ctx.models.current.size).toBe(0);
     expect(ctx.refCounts.current.size).toBe(0);
   });
@@ -159,7 +159,7 @@ describe("React state updates", () => {
     expect(seen.at(-1)).not.toBe(seen.at(-2));
   });
 
-  test("useSharedModel follows a changing key", () => {
+  test("useSharedModel follows a changing key", async () => {
     let ctx!: StratorContext;
     function Spy() {
       ctx = useStratorContext();
@@ -178,7 +178,7 @@ describe("React state updates", () => {
       ),
     );
     expect(container.textContent).toBe("1");
-    act(() =>
+    await act(async () =>
       root.render(
         <StratorProvider initialState={{ first: { count: 1 }, second: { count: 2 } }}>
           <Spy />
@@ -190,5 +190,68 @@ describe("React state updates", () => {
     act(() => (ctx.models.current.get("second") as TodoModel).increment());
     expect(container.textContent).toBe("3");
     expect(ctx.models.current.has("first")).toBe(false);
+  });
+
+  test("consumers pick up a fresh instance after an explicit disposeModel", async () => {
+    let ctx!: StratorContext;
+    const models: TodoModel[] = [];
+    function Spy() {
+      ctx = useStratorContext();
+      return null;
+    }
+    function View() {
+      const [m, count] = useSharedModel("cart", TodoModel, s => s.count);
+      models.push(m);
+      return <span>{count}</span>;
+    }
+    await act(async () =>
+      root.render(
+        <StratorProvider>
+          <Spy />
+          <View />
+          <View />
+        </StratorProvider>,
+      ),
+    );
+    await act(async () => models.at(-1)!.increment());
+    expect(container.textContent).toBe("11");
+
+    await act(async () => ctx.disposeModel("cart"));
+    expect(container.textContent).toBe("00");
+    const fresh = ctx.models.current.get("cart") as TodoModel;
+    expect(models.at(-1)).toBe(fresh);
+    expect(ctx.refCounts.current.get("cart")).toBe(2);
+    await act(async () => fresh.increment());
+    expect(container.textContent).toBe("11");
+  });
+
+  test("re-renders when a class instance in state is mutated in place", () => {
+    class User {
+      public name = "a";
+      public greet() {
+        return `hi ${this.name}`;
+      }
+    }
+    class UserModel extends Model<{ user: User }> {
+      static initialState = { user: new User() };
+      public rename(name: string) {
+        this.state.user.name = name;
+      }
+    }
+    let model!: UserModel;
+    function View() {
+      const [m, user] = useLocalModel(UserModel, s => s.user);
+      model = m;
+      return <span>{user.greet()}</span>;
+    }
+    act(() =>
+      root.render(
+        <StratorProvider>
+          <View />
+        </StratorProvider>,
+      ),
+    );
+    act(() => model.rename("b"));
+    expect(container.textContent).toBe("hi b");
   });
 });

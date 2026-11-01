@@ -12,7 +12,7 @@ Official React bindings for **Strator**, an intuitive, class-based MVVM (Model-V
   - `useLocalModel`: Component-scoped model instance automatically disposed and cleaned up from memory when the component unmounts.
   - `useSharedModel`: Keyed model instance reference-counted across active consumers, shared while any component is mounted and automatically disposed once all consumers unmount.
   - `useGlobalModel`: Singleton model instance shared globally and reference-counted across consumers under the provider.
-- **Selective Re-rendering**: Subscribe to specific state slices with selector functions and built-in shallow equality comparison to prevent unnecessary re-renders.
+- **Selective Re-rendering**: Subscribe to specific state slices with selector functions and built-in structural comparison of immutable snapshots to prevent unnecessary re-renders.
 - **Direct Domain Method Invocations**: Trigger state updates by directly calling model methods without action dispatchers or reducer boilerplate.
 - **Full SSR & Hydration Support**: Populate initial state maps on `<StratorProvider>` during server-side rendering and smoothly hydrate client-side state.
 

@@ -14,7 +14,7 @@ import { BookOpen, Layers, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "@strator/react Documentation | Strator MVVM for React",
   description:
-    "Complete technical guide and API reference for @strator/react. Learn how to bind MVVM models to React 18+ components with fine-grained selectors and shallow diffing.",
+    "Complete technical guide and API reference for @strator/react. Learn how to bind MVVM models to React 18+ components with fine-grained selectors and structural snapshot diffing.",
 };
 
 const reactApiItems: ApiItem[] = [
@@ -214,18 +214,18 @@ const reactMechanicsSteps: FlowStep[] = [
     title: "Registration & Mounting",
     subtitle: "Context Registry, Dispatcher Attachment & Ref Counting",
     description:
-      "When a hook like useLocalModel, useSharedModel, or useGlobalModel executes, it checks the Provider's models Map ref for an existing instance under the specified key (or useId()). If missing, it instantiates the Model class and registers it with the ReactDispatcher. On mount, it increments the model's reference count, and on unmount decrements it, automatically disposing the model and dispatcher once all consumers unmount.",
+      "When a hook like useLocalModel, useSharedModel, or useGlobalModel executes, it checks the Provider's models Map ref for an existing instance under the specified key (or useId()). If missing, it instantiates the Model class and registers it with the ReactDispatcher. On mount, it increments the model's reference count, and on unmount decrements it. Once no consumer is left, the model and its dispatcher are disposed in a microtask, so React StrictMode's simulated unmount/remount keeps the same instance.",
     badge: "Mount Phase",
     snippet: `// React binding resolves instance and tracks reference count
 const instance = models.current.has(key)
   ? models.current.get(key)
   : new ModelClass();
 models.current.set(key, instance);
-// Retain on mount, release & auto-dispose on unmount
+// Retain on mount, release & deferred auto-dispose on unmount
 useEffect(() => {
-  ctx.retainModel(key);
+  ctx.retainModel(key, instance);
   return () => ctx.releaseModel(key);
-}, [ctx, key]);`,
+}, [ctx, key, instance]);`,
   },
   {
     step: 2,
@@ -242,23 +242,22 @@ public increase() {
   {
     step: 3,
     title: "Selector Evaluation & Diffing",
-    subtitle: "shallowEqual Precision Filtering",
+    subtitle: "useSyncExternalStore & Structural Snapshots",
     description:
-      "ReactDispatcher notifies all subscribed hook instances. Each hook re-evaluates its selector against instance.getState() and compares the result to snapshotRef.current using shallowEqual(). If unchanged, the update is dropped immediately.",
+      "ReactDispatcher bumps the model's version and notifies every hook subscribed through useSyncExternalStore. Each hook re-evaluates its selector, deep-copies the result into an immutable snapshot and compares it structurally with the previous one. If nothing changed, the previous snapshot reference is returned and React skips the re-render.",
     badge: "Diffing Engine",
-    snippet: `// Evaluates selector and tests shallow equality
-const nextValue = selector(instance.getState());
-if (!shallowEqual(snapshotRef.current, nextValue)) {
-  snapshotRef.current = nextValue;
-  setTick(t => t + 1); // trigger React re-render
-}`,
+    snippet: `// getSnapshot passed to useSyncExternalStore
+const next = createSnapshot(selector(instance.getState()));
+return deepEqual(previous, next)
+  ? previous // same reference: no re-render
+  : next; // new snapshot: React re-renders`,
   },
   {
     step: 4,
     title: "Selective Component Re-render",
     subtitle: "Zero-Overhead Fiber Reconciliation",
     description:
-      "Only components whose selected values actually changed trigger setTick() and reconcile in React. Components selecting other slices of the same model remain completely untouched, ensuring optimal 60fps performance.",
+      "Only components whose selected values actually changed get a new snapshot and reconcile in React. Components selecting other slices of the same model remain completely untouched, ensuring optimal 60fps performance.",
     badge: "UI Commit",
     snippet: `// Component renders with fresh snapshot
 const [model, count] = useLocalModel(CounterModel, s => s.count);
@@ -288,20 +287,18 @@ return <div>{count}</div>;`,
   },
   {
     id: "selector-reference-stability",
-    title: "Selector Reference Stability & Object Creation",
+    title: "Selector Cost on Large Slices",
     severity: "warning",
     summary:
-      "Returning new object or array literals from selectors without memoization causes re-renders on any state mutation in the model.",
+      "Selected values are deep-copied and compared structurally after every model change, so selecting a very large slice costs time proportional to its size.",
     details:
-      "@strator/react compares selector snapshots using shallowEqual(). If your selector returns a newly constructed nested object (e.g., state => ({ nested: { a: state.a } })), shallowEqual will evaluate to false because nested !== prev.nested.",
-    impact: "Unnecessary re-renders when unrelated parts of the model state change.",
+      "Models mutate their state in place, so @strator/react hands components an immutable deep snapshot of the selected value and compares snapshots structurally. Nested projections like state => ({ nested: { a: state.a } }) are fine, but selecting the whole state of a big model in many components repeats that copy for each of them.",
+    impact: "Extra CPU work per state change when selectors return large objects or arrays.",
     recommendation:
-      "Select primitive values or flat object projections where all top-level properties are shallow-comparable.",
-    badSnippet: `// ❌ Deep nested object created on every tick
-const [model, data] = useLocalModel(Model, s => ({
-  nested: { value: s.count }
-}));`,
-    goodSnippet: `// ✅ Flat projection: shallowEqual compares top-level keys
+      "Select only the values the component renders. Prefer primitives or small projections over returning the whole state.",
+    badSnippet: `// ❌ Copies and compares the whole state on every change
+const [model, state] = useLocalModel(Model, s => s);`,
+    goodSnippet: `// ✅ Small projection of what the component renders
 const [model, data] = useLocalModel(Model, s => ({
   count: s.count,
   name: s.name
@@ -341,7 +338,7 @@ export default function ReactDocsPage() {
           framework="React"
           packageName="@strator/react"
           version={reactPackage.version}
-          description="High-performance React 18 & 19 adapter for Strator MVVM models. Features selective component subscriptions with shallow equality diffing, zero boilerplate hooks, and pristine testability."
+          description="High-performance React 18 & 19 adapter for Strator MVVM models. Features selective component subscriptions with structural snapshot diffing, zero boilerplate hooks, and pristine testability."
           navLinks={[
             { href: "#quickstart", label: "Quickstart" },
             { href: "#api", label: "API Reference" },
@@ -491,12 +488,12 @@ export function Counter() {
             {
               title: "Selective Subscriptions",
               content:
-                "Unlike standard context which re-renders every consumer when any value changes, Strator hooks evaluate selectors per component with shallowEqual diffing before calling setTick.",
+                "Unlike standard context which re-renders every consumer when any value changes, Strator hooks evaluate selectors per component and only re-render when the structural snapshot changes.",
             },
             {
               title: "Predictable Snapshots",
               content:
-                "snapshotRef retains the exact previous selector value. Re-renders only fire if snapshotRef.current !== nextValue according to shallow equality.",
+                "Each hook keeps the previous immutable snapshot. When the new selector result is structurally equal, the same reference is returned, so memoised children and effect dependencies stay stable.",
             },
             {
               title: "Zero UI Dependencies in Models",

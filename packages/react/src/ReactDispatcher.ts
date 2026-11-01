@@ -24,6 +24,19 @@ export class ReactModelDispatcher implements Dispatcher {
     }
   }
 
+  /** Notifies listeners without a state change, e.g. when the model was disposed under them. */
+  public notify(): void {
+    this.dispatchStateChange();
+  }
+
+  /** Moves all listeners of `other` onto this dispatcher. */
+  public adoptListeners(other: ReactModelDispatcher): void {
+    for (const listener of other.listeners) {
+      this.listeners.add(listener);
+    }
+    other.listeners.clear();
+  }
+
   public subscribe(callback: () => void): () => void {
     this.listeners.add(callback);
     return () => {
@@ -49,6 +62,10 @@ export class ReactDispatcher {
   public subscribe(key: string, callback: () => void): () => void {
     const dispatcher = this.getDispatcher(key);
     return dispatcher.subscribe(callback);
+  }
+
+  public peekDispatcher(key: string): ReactModelDispatcher | undefined {
+    return this.dispatchers.get(key);
   }
 
   public removeDispatcher(key: string): void {

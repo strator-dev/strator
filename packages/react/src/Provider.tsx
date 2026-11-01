@@ -22,11 +22,17 @@ export interface StratorContext {
   getModelVersion(instance: Model<any>): number;
   getState(): Record<string, any>;
   /**
-   * Marks `key` as used by one more consumer. When `instance` is passed and the key was disposed in the
-   * meantime (e.g. React StrictMode's simulated unmount), the instance is registered again.
+   * Marks `key` as used by one more consumer and returns the instance registered for it. When `instance`
+   * is passed and the key was disposed in the meantime (e.g. a hidden Suspense/Activity subtree), the
+   * instance is registered again. A returned instance other than `instance` means the caller is stale.
    */
-  retainModel(key: string, instance?: Model<any>): void;
+  retainModel(key: string, instance?: Model<any>): Model<any> | undefined;
+  /**
+   * Marks `key` as used by one consumer less. When nobody uses it anymore it is disposed in a microtask,
+   * unless it was retained again in the meantime (e.g. React StrictMode's simulated unmount/remount).
+   */
   releaseModel(key: string): void;
+  /** Immediately removes the model; mounted consumers are notified and re-create it on their next render. */
   disposeModel(key: string): void;
 }
 
@@ -91,30 +97,46 @@ export function Provider({ children, initialState }: ProviderProps) {
 
   const ctx = useMemo<StratorContext>(() => {
     const disposeModel = (key: string): void => {
+      const instance = models.current.get(key);
       models.current.delete(key);
       dispatcher.current.removeDispatcher(key);
       refCounts.current.delete(key);
+      if (instance) {
+        modelDispatchers.current.get(instance)?.notify();
+      }
     };
 
-    const retainModel = (key: string, instance?: Model<any>): void => {
+    const retainModel = (key: string, instance?: Model<any>): Model<any> | undefined => {
       if (instance && !models.current.has(key)) {
         const modelDispatcher = modelDispatchers.current.get(instance);
         if (modelDispatcher) {
+          // Keep listeners that subscribed by key while the model was not registered.
+          const pending = dispatcher.current.peekDispatcher(key);
+          if (pending && pending !== modelDispatcher) {
+            modelDispatcher.adoptListeners(pending);
+          }
           models.current.set(key, instance);
           dispatcher.current.setDispatcher(key, modelDispatcher);
         }
       }
       const current = refCounts.current.get(key) ?? 0;
       refCounts.current.set(key, current + 1);
+      return models.current.get(key);
     };
 
     const releaseModel = (key: string): void => {
       const current = refCounts.current.get(key) ?? 0;
-      if (current <= 1) {
-        disposeModel(key);
-      } else {
+      if (current > 1) {
         refCounts.current.set(key, current - 1);
+        return;
       }
+      refCounts.current.set(key, 0);
+      const instance = models.current.get(key);
+      queueMicrotask(() => {
+        if ((refCounts.current.get(key) ?? 0) === 0 && models.current.get(key) === instance) {
+          disposeModel(key);
+        }
+      });
     };
 
     return {
