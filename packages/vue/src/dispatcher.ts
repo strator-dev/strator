@@ -23,10 +23,17 @@ export function syncState(source: any, target: any): void {
   if (Array.isArray(source) && Array.isArray(target)) {
     target.length = source.length;
     for (let i = 0; i < source.length; i++) {
-      if (typeof source[i] === "object" && source[i] !== null && typeof target[i] === "object" && target[i] !== null) {
-        syncState(source[i], target[i]);
-      } else {
-        target[i] = source[i];
+      const srcVal = source[i];
+      const tgtVal = target[i];
+      if (typeof srcVal === "object" && srcVal !== null) {
+        if (typeof tgtVal === "object" && tgtVal !== null && Array.isArray(srcVal) === Array.isArray(tgtVal)) {
+          syncState(srcVal, tgtVal);
+        } else {
+          // Never share the model's raw objects with the reactive copy.
+          target[i] = cloneState(srcVal);
+        }
+      } else if (tgtVal !== srcVal) {
+        target[i] = srcVal;
       }
     }
     return;

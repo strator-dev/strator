@@ -1,5 +1,5 @@
 import type { Model, ModelCtor } from "@strator/core";
-import { getCurrentScope, onScopeDispose, useId } from "vue";
+import { getCurrentInstance, getCurrentScope, onScopeDispose, useId } from "vue";
 import { useStratorContext } from "./context.ts";
 import type { ModelResult, ModelSelectorResult, Selector } from "./types.ts";
 import { useModel } from "./useModel.ts";
@@ -21,12 +21,8 @@ export function useLocalModel<T extends object, TModel extends Model<T>, TResult
   model: ModelCtor<T, TModel>,
   selector?: Selector<T, TResult>,
 ): ModelResult<TModel, T> | ModelSelectorResult<TModel, TResult> {
-  let id: string;
-  try {
-    id = useId();
-  } catch {
-    id = `__strator_local_${++fallbackLocalId}__`;
-  }
+  // Vue's useId() does not throw outside a component; it warns and returns undefined.
+  const id = (getCurrentInstance() ? useId() : undefined) || `__strator_local_${++fallbackLocalId}__`;
 
   const ctx = useStratorContext();
 

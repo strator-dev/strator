@@ -1,5 +1,6 @@
 import { Model, type ModelCtor } from "@strator/core";
 import React, { createContext, type RefObject, useContext, useMemo, useRef } from "react";
+import { createSnapshot } from "./snapshot.ts";
 import { ReactDispatcher, type ReactModelDispatcher } from "./ReactDispatcher.ts";
 
 export type InitialStateRecord = Record<string, any>;
@@ -77,22 +78,13 @@ export function Provider({ children, initialState }: ProviderProps) {
         !Array.isArray(ctor.initialState) &&
         !Array.isArray(stateFromProps)
       ) {
-        return { ...ctor.initialState, ...stateFromProps };
+        return createSnapshot({ ...ctor.initialState, ...stateFromProps } as T);
       }
-      return (
-        typeof stateFromProps === "object" && stateFromProps !== null
-          ? Array.isArray(stateFromProps)
-            ? [...stateFromProps]
-            : { ...stateFromProps }
-          : stateFromProps
-      ) as T;
+      return createSnapshot(stateFromProps as T);
     }
 
-    if (typeof ctor.initialState === "object" && ctor.initialState !== null) {
-      return (Array.isArray(ctor.initialState) ? [...ctor.initialState] : { ...ctor.initialState }) as T;
-    }
-
-    return ctor.initialState;
+    // Deep copy: nested arrays/objects of the static initialState must not be shared between instances.
+    return createSnapshot(ctor.initialState);
   };
 
   const ctx = useMemo<StratorContext>(() => {
@@ -144,8 +136,15 @@ export function Provider({ children, initialState }: ProviderProps) {
       models,
       refCounts,
       getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel {
-        if (models.current.has(key)) {
-          return models.current.get(key) as TModel;
+        const existing = models.current.get(key);
+        if (existing) {
+          if (existing.constructor !== ctor) {
+            throw new Error(
+              `Strator: key "${key}" is already used by model ${existing.constructor.name || "(anonymous)"}, not ${ctor.name || "(anonymous)"}. ` +
+                "Use a different key, or give the class a unique `static modelKey` (class names can collide after minification).",
+            );
+          }
+          return existing as TModel;
         }
         const state = getInitialStateFor(key, ctor);
         const modelDispatcher = dispatcher.current.getDispatcher(key);

@@ -254,4 +254,68 @@ describe("React state updates", () => {
     act(() => model.rename("b"));
     expect(container.textContent).toBe("hi b");
   });
+
+  test("model instances do not share nested initial state", async () => {
+    let ctx!: StratorContext;
+    function Spy() {
+      ctx = useStratorContext();
+      return null;
+    }
+    await act(async () =>
+      root.render(
+        <StratorProvider>
+          <Spy />
+        </StratorProvider>,
+      ),
+    );
+    const first = ctx.getModel("first", TodoModel);
+    first.toggleFirst();
+    expect(ctx.getModel("second", TodoModel).getState().items[0]!.done).toBe(false);
+    expect(TodoModel.initialState.items[0]!.done).toBe(false);
+  });
+
+  test("reusing a key for a different model class throws a clear error", async () => {
+    class OtherModel extends Model<{ value: number }> {
+      static initialState = { value: 0 };
+    }
+    let ctx!: StratorContext;
+    function Spy() {
+      ctx = useStratorContext();
+      return null;
+    }
+    await act(async () =>
+      root.render(
+        <StratorProvider>
+          <Spy />
+        </StratorProvider>,
+      ),
+    );
+    ctx.getModel("shared", TodoModel);
+    expect(() => ctx.getModel("shared", OtherModel)).toThrow(/already used by model TodoModel/);
+  });
+
+  test("useGlobalModel prefers a static modelKey over the class name", async () => {
+    class Keyed extends Model<{ value: number }> {
+      static initialState = { value: 0 };
+      static modelKey = "keyed-model";
+    }
+    let ctx!: StratorContext;
+    function Spy() {
+      ctx = useStratorContext();
+      return null;
+    }
+    function View() {
+      useGlobalModel(Keyed, s => s.value);
+      return null;
+    }
+    await act(async () =>
+      root.render(
+        <StratorProvider>
+          <Spy />
+          <View />
+        </StratorProvider>,
+      ),
+    );
+    expect(ctx.models.current.has("keyed-model")).toBe(true);
+  });
 });

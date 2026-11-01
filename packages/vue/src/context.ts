@@ -37,27 +37,25 @@ export function createStratorContext(initialState?: InitialStateMap): StratorCon
         !Array.isArray(ctor.initialState) &&
         !Array.isArray(stateFromProps)
       ) {
-        return { ...ctor.initialState, ...stateFromProps };
+        return cloneState({ ...ctor.initialState, ...stateFromProps } as T);
       }
-      return (
-        typeof stateFromProps === "object" && stateFromProps !== null
-          ? Array.isArray(stateFromProps)
-            ? [...stateFromProps]
-            : { ...stateFromProps }
-          : stateFromProps
-      ) as T;
+      return cloneState(stateFromProps as T);
     }
 
-    if (typeof ctor.initialState === "object" && ctor.initialState !== null) {
-      return (Array.isArray(ctor.initialState) ? [...ctor.initialState] : { ...ctor.initialState }) as T;
-    }
-
-    return ctor.initialState;
+    // Deep copy: nested arrays/objects of the static initialState must not be shared between instances.
+    return cloneState(ctor.initialState);
   };
 
   const getModel = <T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel => {
-    if (models.has(key)) {
-      return models.get(key) as TModel;
+    const existing = models.get(key);
+    if (existing) {
+      if (existing.constructor !== ctor) {
+        throw new Error(
+          `Strator: key "${key}" is already used by model ${existing.constructor.name || "(anonymous)"}, not ${ctor.name || "(anonymous)"}. ` +
+            "Use a different key, or give the class a unique `static modelKey` (class names can collide after minification).",
+        );
+      }
+      return existing as TModel;
     }
     const state = getInitialStateFor(key, ctor);
     const modelDispatcher = dispatcher.getDispatcher(key);

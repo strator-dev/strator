@@ -17,6 +17,6 @@ export function useGlobalModel<T extends object, TModel extends Model<T>, TResul
   model: ModelCtor<T, TModel>,
   selector?: Selector<T, TResult>,
 ): ModelResult<TModel, T> | ModelSelectorResult<TModel, TResult> {
-  const key = model.name || `__strator_global_${model.toString()}__`;
+  const key = model.modelKey || model.name || `__strator_global_${model.toString()}__`;
   return (useModel as any)(key, model, selector);
 }

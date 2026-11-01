@@ -17,5 +17,5 @@ export function useGlobalModel<T extends object, TModel extends Model<T>, TResul
   model: ModelCtor<T, TModel>,
   selector?: Selector<T, TResult>,
 ): [TModel, TResult | undefined] {
-  return useModel(model.name, model, selector);
+  return useModel(model.modelKey ?? model.name, model, selector);
 }

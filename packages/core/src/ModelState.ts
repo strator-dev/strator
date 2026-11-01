@@ -7,24 +7,73 @@ export interface Observer {
   onArrayItemAdd?(path: Path, indexes: number[]): void;
 }
 
+/**
+ * Built-ins whose data lives in internal slots. Their methods throw when called on a proxy, so they are
+ * handed out unwrapped (mutating them through their own methods is therefore not tracked).
+ */
+function isExoticObject(value: object): boolean {
+  return (
+    value instanceof Map ||
+    value instanceof Set ||
+    value instanceof WeakMap ||
+    value instanceof WeakSet ||
+    value instanceof Date ||
+    value instanceof RegExp ||
+    value instanceof Promise ||
+    ArrayBuffer.isView(value) ||
+    value instanceof ArrayBuffer
+  );
+}
+
+/** Array methods that read elements and hand them to callbacks or callers; run against the proxy. */
+const ELEMENT_READING_METHODS = new Set<PropertyKey>([
+  "at",
+  "entries",
+  "every",
+  "filter",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+  "flatMap",
+  "forEach",
+  "map",
+  "reduce",
+  "reduceRight",
+  "some",
+  "values",
+  Symbol.iterator,
+]);
+
+function wrapValue(value: unknown, getValue: () => unknown, path: Path, observer: Observer): unknown {
+  if (Array.isArray(value)) {
+    return createProxyForArray(getValue as () => unknown[], path, observer);
+  }
+  if (typeof value === "object" && value !== null && !isExoticObject(value)) {
+    return createProxyForObject(getValue as () => object, path, observer);
+  }
+  return value;
+}
+
+function getOwnPropertyDescriptor(target: object, propName: PropertyKey): PropertyDescriptor | undefined {
+  const descriptor = Reflect.getOwnPropertyDescriptor(target, propName);
+  // The proxy's own target is an empty placeholder, so every reported property must be configurable.
+  if (descriptor) descriptor.configurable = true;
+  return descriptor;
+}
+
 function createProxyForObject<T extends object>(getTarget: () => T, path: Path, observer: Observer): T {
   return new Proxy({} as unknown as T, {
-    get: (_, propName) => {
+    get: (_, propName, receiver) => {
       const target = getTarget();
-      const value = Reflect.get(target, propName);
-
-      if (Array.isArray(value)) {
-        return createProxyForArray(
-          () => Reflect.get(getTarget(), propName) as unknown[],
-          [...path, propName],
-          observer,
-        );
-      }
-      if (typeof value === "object" && value !== null && value !== undefined) {
-        return createProxyForObject(() => Reflect.get(getTarget(), propName) as object, [...path, propName], observer);
-      }
-      return value;
+      // Pass the proxy as receiver so getters and methods of class instances go through tracking.
+      const value = Reflect.get(target, propName, receiver);
+      return wrapValue(value, () => Reflect.get(getTarget(), propName), [...path, propName], observer);
     },
+    has: (_, propName) => Reflect.has(getTarget(), propName),
+    ownKeys: () => Reflect.ownKeys(getTarget()),
+    getOwnPropertyDescriptor: (_, propName) => getOwnPropertyDescriptor(getTarget(), propName),
+    getPrototypeOf: () => Reflect.getPrototypeOf(getTarget()),
     set: (_, propName, newValue) => {
       const result = Reflect.set(getTarget(), propName, newValue);
 
@@ -43,8 +92,22 @@ function createProxyForObject<T extends object>(getTarget: () => T, path: Path, 
 }
 
 function createProxyForArray<T>(getTarget: () => T[], path: Path, observer: Observer): T[] {
-  return new Proxy({} as unknown as T[], {
-    get(_, key) {
+  // An array placeholder makes Array.isArray(proxy) true.
+  return new Proxy([] as T[], {
+    has: (_, key) => Reflect.has(getTarget(), key),
+    ownKeys: () => Reflect.ownKeys(getTarget()),
+    getOwnPropertyDescriptor: (_, key) => {
+      const descriptor = Reflect.getOwnPropertyDescriptor(getTarget(), key);
+      if (!descriptor) return undefined;
+      // `length` is non-configurable on both the real array and the placeholder; everything else must be
+      // reported configurable because the placeholder does not have it.
+      if (key === "length") {
+        return { ...descriptor, configurable: false, value: getTarget().length };
+      }
+      descriptor.configurable = true;
+      return descriptor;
+    },
+    get(_, key, receiver) {
       if (key === "push") {
         return (...items: T[]) => {
           const target = getTarget();
@@ -177,16 +240,12 @@ function createProxyForArray<T>(getTarget: () => T[], path: Path, observer: Obse
       const target = getTarget();
       const value = Reflect.get(target, key);
 
-      if (Array.isArray(value)) {
-        return createProxyForArray(() => Reflect.get(getTarget(), key) as unknown[], [...path, key], observer);
-      }
-      if (typeof value === "object" && value !== null && value !== undefined) {
-        return createProxyForObject(() => Reflect.get(getTarget(), key) as object, [...path, key], observer);
-      }
       if (typeof value === "function") {
-        return value.bind(target);
+        // Element-reading methods run against the proxy so callbacks receive tracked elements;
+        // everything else (indexOf, includes, join, slice, ...) runs against the raw array.
+        return value.bind(ELEMENT_READING_METHODS.has(key) ? receiver : target);
       }
-      return value;
+      return wrapValue(value, () => Reflect.get(getTarget(), key), [...path, key], observer);
     },
     set(_, key, newValue) {
       const target = getTarget();
