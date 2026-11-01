@@ -1,6 +1,6 @@
 import { Model, type ModelCtor } from "@strator/core";
 import React, { createContext, type RefObject, useContext, useMemo, useRef } from "react";
-import { ReactDispatcher } from "./ReactDispatcher.ts";
+import { ReactDispatcher, type ReactModelDispatcher } from "./ReactDispatcher.ts";
 
 export type InitialStateRecord = Record<string, any>;
 export type InitialStateMap = InitialStateRecord | Map<string | ModelCtor<any, any>, any>;
@@ -16,8 +16,16 @@ export interface StratorContext {
   refCounts: RefObject<Map<string, number>>;
   getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel;
   subscribeToStateChange(key: string, callback: () => void): () => void;
+  /** Subscribes to changes of a specific model instance, regardless of whether its key is still registered. */
+  subscribeToModel(instance: Model<any>, callback: () => void): () => void;
+  /** Monotonic change counter of a specific model instance. */
+  getModelVersion(instance: Model<any>): number;
   getState(): Record<string, any>;
-  retainModel(key: string): void;
+  /**
+   * Marks `key` as used by one more consumer. When `instance` is passed and the key was disposed in the
+   * meantime (e.g. React StrictMode's simulated unmount), the instance is registered again.
+   */
+  retainModel(key: string, instance?: Model<any>): void;
   releaseModel(key: string): void;
   disposeModel(key: string): void;
 }
@@ -28,6 +36,7 @@ export function Provider({ children, initialState }: ProviderProps) {
   const dispatcher = useRef(new ReactDispatcher());
   const models = useRef<Map<string, Model<any>>>(new Map());
   const refCounts = useRef<Map<string, number>>(new Map());
+  const modelDispatchers = useRef<WeakMap<Model<any>, ReactModelDispatcher>>(new WeakMap());
   const initialStateRef = useRef<InitialStateMap | undefined>(initialState);
   initialStateRef.current = initialState;
 
@@ -87,7 +96,14 @@ export function Provider({ children, initialState }: ProviderProps) {
       refCounts.current.delete(key);
     };
 
-    const retainModel = (key: string): void => {
+    const retainModel = (key: string, instance?: Model<any>): void => {
+      if (instance && !models.current.has(key)) {
+        const modelDispatcher = modelDispatchers.current.get(instance);
+        if (modelDispatcher) {
+          models.current.set(key, instance);
+          dispatcher.current.setDispatcher(key, modelDispatcher);
+        }
+      }
       const current = refCounts.current.get(key) ?? 0;
       refCounts.current.set(key, current + 1);
     };
@@ -110,12 +126,21 @@ export function Provider({ children, initialState }: ProviderProps) {
           return models.current.get(key) as TModel;
         }
         const state = getInitialStateFor(key, ctor);
-        const instance = Model.withInternalState(ctor, state, dispatcher.current.getDispatcher(key));
+        const modelDispatcher = dispatcher.current.getDispatcher(key);
+        const instance = Model.withInternalState(ctor, state, modelDispatcher);
         models.current.set(key, instance);
+        modelDispatchers.current.set(instance, modelDispatcher);
         return instance;
       },
       subscribeToStateChange(key: string, callback: () => void): () => void {
         return dispatcher.current.subscribe(key, callback);
+      },
+      subscribeToModel(instance: Model<any>, callback: () => void): () => void {
+        const modelDispatcher = modelDispatchers.current.get(instance);
+        return modelDispatcher ? modelDispatcher.subscribe(callback) : () => {};
+      },
+      getModelVersion(instance: Model<any>): number {
+        return modelDispatchers.current.get(instance)?.version ?? 0;
       },
       getState(): Record<string, any> {
         const result: Record<string, any> = {};

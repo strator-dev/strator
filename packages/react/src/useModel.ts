@@ -1,17 +1,14 @@
 import type { Model, ModelCtor } from "@strator/core";
-import { useState, useDebugValue, useEffect, useRef } from "react";
+import { useCallback, useDebugValue, useEffect, useRef, useSyncExternalStore } from "react";
 import { useStratorContext } from "./Provider.tsx";
+import { createSnapshot, deepEqual } from "./snapshot.ts";
 import type { Selector } from "./types.ts";
-import { shallowEqual } from "./shallowEqual.ts";
 
-function createSnapshot<T>(val: T): T {
-  if (Array.isArray(val)) {
-    return [...val] as unknown as T;
-  }
-  if (typeof val === "object" && val !== null) {
-    return { ...val };
-  }
-  return val;
+interface SnapshotCache<TModel, TResult> {
+  instance: TModel;
+  version: number;
+  selector: Selector<any, TResult>;
+  value: TResult;
 }
 
 export function useModel<T extends object, TModel extends Model<T>, TResult>(
@@ -34,32 +31,41 @@ export function useModel<T extends object, TModel extends Model<T>, TResult>(
   selector?: Selector<T, TResult>,
 ): [TModel, TResult | undefined] {
   const ctx = useStratorContext();
-  const [instance] = useState<TModel>(() => ctx.getModel(key, model));
+  // Looked up on every render (a cached Map lookup) so the instance follows `key` changes.
+  const instance = ctx.getModel(key, model);
 
   useDebugValue(instance);
 
-  const [, setTick] = useState(0);
-  const selectedState = selector ? selector(instance.getState()) : undefined;
-  const snapshotRef = useRef<TResult | undefined>(createSnapshot(selectedState));
+  const cacheRef = useRef<SnapshotCache<TModel, TResult> | null>(null);
 
-  useEffect(() => {
+  const hasSelector = selector !== undefined;
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => (hasSelector ? ctx.subscribeToModel(instance, onStoreChange) : () => {}),
+    [ctx, instance, hasSelector],
+  );
+
+  const getSnapshot = (): TResult | undefined => {
     if (!selector) return undefined;
+    const version = ctx.getModelVersion(instance);
+    const cache = cacheRef.current;
+    if (cache && cache.instance === instance && cache.version === version && cache.selector === selector) {
+      return cache.value;
+    }
+    const next = createSnapshot(selector(instance.getState()));
+    // Keep the previous reference when nothing observable changed, so memoised children stay stable.
+    const value = cache && cache.instance === instance && deepEqual(cache.value, next) ? cache.value : next;
+    cacheRef.current = { instance, version, selector, value };
+    return value;
+  };
 
-    return ctx.subscribeToStateChange(key, () => {
-      const newSelectedState = selector(instance.getState());
-
-      if (shallowEqual(newSelectedState, snapshotRef.current)) return;
-      snapshotRef.current = createSnapshot(newSelectedState);
-      setTick(t => t + 1);
-    });
-  }, [instance, key, selector, ctx]);
+  const selectedState = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   useEffect(() => {
-    ctx.retainModel(key);
+    ctx.retainModel(key, instance);
     return () => {
       ctx.releaseModel(key);
     };
-  }, [ctx, key]);
+  }, [ctx, key, instance]);
 
   return [instance, selectedState];
 }

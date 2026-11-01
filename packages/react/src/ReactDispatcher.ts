@@ -2,8 +2,14 @@ import type { Dispatcher, Path } from "@strator/core";
 
 export class ReactModelDispatcher implements Dispatcher {
   protected listeners: Set<() => void> = new Set();
+  protected _version = 0;
 
   public constructor(public readonly key: string) {}
+
+  /** Incremented on every state change; used as a cheap change marker for snapshots. */
+  public get version(): number {
+    return this._version;
+  }
 
   public dispatchAction(_payload?: { action: string; payload?: unknown }): void {}
 
@@ -12,6 +18,7 @@ export class ReactModelDispatcher implements Dispatcher {
   public dispatchActionFinish(_payload?: { action: string; result?: unknown }): void {}
 
   public dispatchStateChange(_payload?: { path: Path; isArray?: boolean }): void {
+    this._version += 1;
     for (const listener of this.listeners) {
       listener();
     }
@@ -19,7 +26,9 @@ export class ReactModelDispatcher implements Dispatcher {
 
   public subscribe(callback: () => void): () => void {
     this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    return () => {
+      this.listeners.delete(callback);
+    };
   }
 }
 
@@ -31,6 +40,10 @@ export class ReactDispatcher {
     const result = new ReactModelDispatcher(key);
     this.dispatchers.set(key, result);
     return result;
+  }
+
+  public setDispatcher(key: string, dispatcher: ReactModelDispatcher): void {
+    this.dispatchers.set(key, dispatcher);
   }
 
   public subscribe(key: string, callback: () => void): () => void {
