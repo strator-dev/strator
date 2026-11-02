@@ -46,9 +46,15 @@ jobs:
 
       - name: Resolve release version
         id: version
+        env:
+          # Passed through the environment, never interpolated into the script, to avoid shell injection.
+          RAW_VERSION: ${{ inputs.version || github.ref_name }}
         run: |
-          RAW_VERSION="${{ inputs.version || github.ref_name }}"
           VERSION="${RAW_VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$RAW_VERSION' is not a valid semver version"
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Target release version: $VERSION"
@@ -77,15 +83,22 @@ jobs:
           if ! git diff --quiet package.json packages/*/package.json; then
             git add package.json packages/*/package.json
             git commit -m "chore(release): bump version to v$VERSION"
-            git push origin HEAD:${{ github.event.repository.default_branch || 'main' }}
+            # The checkout may be a tag behind the default branch: replay the bump on its tip so the push
+            # is a fast-forward instead of failing after the packages were already published.
+            git fetch origin "$DEFAULT_BRANCH"
+            git rebase "origin/$DEFAULT_BRANCH"
+            git push origin "HEAD:$DEFAULT_BRANCH"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
 
       - name: Create GitHub Release and Generate Changelog
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          title: ${{ github.ref_name }}
+          # On a manual run github.ref_name is the branch, so derive the tag from the resolved version.
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
+          name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

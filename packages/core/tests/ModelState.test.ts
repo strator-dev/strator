@@ -260,3 +260,63 @@ describe("createModelState - Array Observer Callbacks", () => {
     });
   });
 });
+
+describe("createModelState - proxy behaviour", () => {
+  const noop = {};
+
+  test("exposes own keys, `in` checks, spreading and JSON serialisation", () => {
+    const { proxy } = createModelState({ a: 1, nested: { b: 2 }, list: [1, 2] }, noop);
+    expect(Object.keys(proxy)).toEqual(["a", "nested", "list"]);
+    expect("a" in proxy).toBe(true);
+    expect("missing" in proxy).toBe(false);
+    expect({ ...proxy.nested }).toEqual({ b: 2 });
+    expect(JSON.stringify(proxy)).toBe('{"a":1,"nested":{"b":2},"list":[1,2]}');
+    expect(Array.isArray(proxy.list)).toBe(true);
+    expect([...proxy.list]).toEqual([1, 2]);
+  });
+
+  test("tracks mutations made through elements returned by find, forEach and for...of", () => {
+    const onChange = vi.fn();
+    const { proxy, target } = createModelState(
+      {
+        todos: [
+          { id: 1, done: false },
+          { id: 2, done: false },
+        ],
+      },
+      { onChange },
+    );
+
+    proxy.todos.find(t => t.id === 1)!.done = true;
+    proxy.todos.forEach(t => {
+      if (t.id === 2) t.done = true;
+    });
+    for (const t of proxy.todos) t.done = false;
+
+    expect(target.todos.map(t => t.done)).toEqual([false, false]);
+    expect(onChange).toHaveBeenCalledTimes(4);
+  });
+
+  test("hands out Date, Map and Set unwrapped so their methods work", () => {
+    const createdAt = new Date(0);
+    const { proxy } = createModelState({ createdAt, tags: new Set(["a"]), byId: new Map([[1, "x"]]) }, noop);
+    expect(proxy.createdAt.getTime()).toBe(0);
+    expect(proxy.tags.has("a")).toBe(true);
+    expect(proxy.byId.get(1)).toBe("x");
+  });
+
+  test("keeps class instance prototypes and tracks mutations made by their methods", () => {
+    class Counter {
+      public value = 0;
+      public increment() {
+        this.value += 1;
+      }
+    }
+    const onChange = vi.fn();
+    const { proxy, target } = createModelState({ counter: new Counter() }, { onChange });
+    expect(proxy.counter instanceof Counter).toBe(true);
+    proxy.counter.increment();
+    expect(target.counter.value).toBe(1);
+    expect(onChange).toHaveBeenCalledWith(["counter"]);
+  });
+});

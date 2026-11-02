@@ -613,7 +613,7 @@ const [cart, count] = useSharedModel("main-cart", CartModel, s => s.items.length
             <div>
               <h3 className="text-xl font-bold text-white mb-1">Looking for React bindings?</h3>
               <p className="text-sm text-slate-400">
-                Explore the React 18 &amp; 19 guide with selective hooks, shallowEqual diffing, and SSR hydration.
+                Explore the React 18 &amp; 19 guide with selective hooks, snapshot diffing, and SSR hydration.
               </p>
             </div>
             <Link

@@ -49,4 +49,29 @@ describe("Model", () => {
 
     expect(events.some(e => e.type === "stateChange")).toBe(true);
   });
+
+  test("withExternalState keeps getState() in step with the observed value and notifies", () => {
+    const changes: unknown[] = [];
+    const dispatcher: Dispatcher = {
+      dispatchAction: () => {},
+      dispatchActionFinish: () => {},
+      dispatchActionError: () => {},
+      dispatchStateChange: p => changes.push(p),
+    };
+    let notify!: () => void;
+    let external: TestState = { count: 1, tags: [] };
+    const model = Model.withExternalState(TestModel, external, dispatcher, {
+      observe: cb => {
+        notify = cb;
+      },
+      getValue: () => external,
+    });
+
+    external = { count: 5, tags: ["x"] };
+    notify();
+
+    expect(model.getState()).toBe(external);
+    expect(model["state"].count).toBe(5);
+    expect(changes).toEqual([{ path: [] }]);
+  });
 });

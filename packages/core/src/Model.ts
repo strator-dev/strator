@@ -53,7 +53,11 @@ export abstract class Model<T extends object> {
     const result = new model(modelState.target, modelState.proxy);
 
     observer.observe(() => {
-      modelState.target = observer.getValue();
+      const next = observer.getValue();
+      modelState.target = next;
+      // Keep getState() in step with the proxy, and let bindings know the whole state was replaced.
+      result._internalState.target = next;
+      dispatcher.dispatchStateChange({ path: [] });
     });
 
     return result;
@@ -64,5 +68,10 @@ export type InferModelState<TModel extends Model<any>> = TModel extends Model<in
 
 export interface ModelCtor<T extends object, TModel extends Model<T>> {
   initialState: T;
+  /**
+   * Stable key used by `useGlobalModel` instead of the class name. Set it when your build minifies class
+   * names, otherwise two different models can end up with the same name.
+   */
+  modelKey?: string;
   new (state: T, proxy?: T): TModel;
 }
