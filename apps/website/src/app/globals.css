@@ -1,64 +1,48 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 
 @layer base {
   :root {
-    --background: #060913;
-    --foreground: #f1f5f9;
+    --background: var(--color-ink-900);
+    --foreground: var(--color-fg);
   }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    "Open Sans",
-    "Helvetica Neue",
-    sans-serif;
+  font-family: var(--font-sans);
   overflow-x: hidden;
-  selection-background-color: #04f8fc;
-  selection-color: #060913;
 }
 
 /* Custom glow and backdrop effects */
 .glow-mesh {
-  background-image:
-    radial-gradient(at 20% 15%, rgba(4, 248, 252, 0.16) 0px, transparent 50%),
-    radial-gradient(at 80% 20%, rgba(0, 162, 252, 0.16) 0px, transparent 50%),
-    radial-gradient(at 50% 80%, rgba(0, 63, 252, 0.14) 0px, transparent 50%),
-    radial-gradient(at 90% 85%, rgba(4, 248, 252, 0.12) 0px, transparent 50%);
+  background-image: var(--gradient-glow-mesh);
 }
 
 .grid-pattern {
-  background-size: 32px 32px;
+  background-size: var(--grid-size) var(--grid-size);
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
 }
 
 .glass-panel {
-  background: rgba(10, 17, 32, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-glass);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid var(--color-line);
 }
 
 .glass-panel-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s var(--ease-glide);
 }
 
 .glass-panel-hover:hover {
-  background: rgba(15, 26, 48, 0.7);
-  border-color: rgba(4, 248, 252, 0.4);
+  background: var(--color-glass-hover);
+  border-color: rgb(4 248 252 / 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px rgba(0, 162, 252, 0.25);
+  box-shadow: var(--shadow-glow);
 }
 
 /* Custom scrollbars */
@@ -67,14 +51,14 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #060913;
+  background: var(--color-ink-900);
 }
 ::-webkit-scrollbar-thumb {
-  background: #13223f;
+  background: var(--color-ink-700);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1e3562;
+  background: var(--color-ink-600);
 }
 
 /* Prism Dark Neon Theme Tokens */
