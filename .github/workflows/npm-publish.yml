@@ -102,3 +102,19 @@ jobs:
           name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-website:
+    name: Trigger website deploy
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      # Pushes made with GITHUB_TOKEN (like the version bump above) never start other workflows, except
+      # workflow_dispatch. Dispatch the Pages deploy on the default branch so it builds the released code
+      # and passes the github-pages environment's branch protection, which a tag ref would not.
+      - name: Dispatch Pages deploy workflow
+        run: gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
