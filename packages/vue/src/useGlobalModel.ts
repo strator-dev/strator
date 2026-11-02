@@ -1,6 +1,6 @@
 import type { Model, ModelCtor } from "@strator/core";
 import type { ModelResult, ModelSelectorResult, Selector } from "./types.ts";
-import { useModel } from "./useModel.ts";
+import { useScopedModel } from "./useModel.ts";
 
 export function useGlobalModel<T extends object, TModel extends Model<T>, TResult>(
   model: ModelCtor<T, TModel>,
@@ -18,5 +18,5 @@ export function useGlobalModel<T extends object, TModel extends Model<T>, TResul
   selector?: Selector<T, TResult>,
 ): ModelResult<TModel, T> | ModelSelectorResult<TModel, TResult> {
   const key = model.modelKey || model.name || `__strator_global_${model.toString()}__`;
-  return (useModel as any)(key, model, selector);
+  return useScopedModel(key, model, selector, "global", "useGlobalModel");
 }

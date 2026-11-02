@@ -1,0 +1,58 @@
+{
+  "name": "@strator/devtools",
+  "version": "100.1.1",
+  "description": "In-app devtools for Strator.dev: inspect model instances, method calls and state diffs",
+  "homepage": "https://strator.dev",
+  "bugs": {
+    "url": "https://github.com/strator-dev/strator/issues"
+  },
+  "license": "MIT",
+  "author": "Lukáš Krotovič <lukas.krotovic@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/strator-dev/strator.git",
+    "directory": "packages/devtools"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./dist/index.mjs"
+  ],
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build"
+  },
+  "devDependencies": {
+    "@strator/core": "workspace:*",
+    "@strator/react": "workspace:*",
+    "@types/node": "^25.5.0",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@typescript/native-preview": "7.0.0-dev.20260328.1",
+    "bumpp": "^11.0.1",
+    "happy-dom": "^17.4.4",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "^6.0.2",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "@strator/core": ">=100.1.1",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  }
+}

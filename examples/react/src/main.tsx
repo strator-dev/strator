@@ -1,3 +1,4 @@
+import { StratorDevtools } from "@strator/devtools";
 import { StratorProvider } from "@strator/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -9,5 +10,6 @@ createRoot(document.getElementById("root")!).render(
     <StratorProvider>
       <App />
     </StratorProvider>
+    <StratorDevtools initialIsOpen />
   </StrictMode>,
 );

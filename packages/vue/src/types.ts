@@ -1,4 +1,4 @@
-import type { Model, ModelCtor } from "@strator/core";
+import type { Model, ModelCtor, ModelScope } from "@strator/core";
 import type { ComputedRef } from "vue";
 import type { VueDispatcher } from "./dispatcher.ts";
 
@@ -10,7 +10,12 @@ export type InitialStateMap = InitialStateRecord | Map<string | ModelCtor<any, a
 export interface StratorContextValue {
   dispatcher: VueDispatcher;
   models: Map<string, Model<any>>;
-  getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel;
+  /** `options.scope` only describes the instance to devtools. */
+  getModel<T extends object, TModel extends Model<T>>(
+    key: string,
+    ctor: ModelCtor<T, TModel>,
+    options?: { scope?: ModelScope },
+  ): TModel;
   getReactiveState<T extends object>(key: string): T;
   subscribeToStateChange(key: string, callback: () => void): () => void;
   getState(): Record<string, any>;
