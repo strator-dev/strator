@@ -1,4 +1,4 @@
-import type { ActionRecord, InstanceRecord } from "./store.ts";
+import type { ActionRecord, InstanceView } from "./store.ts";
 import { toCode } from "./values.ts";
 
 /** `CartModel` → `cart`, `SearchFormModel` → `searchForm`. */
@@ -8,14 +8,14 @@ export function variableName(model: string): string {
   return /^[A-Za-z_$][\w$]*$/.test(name) ? name : "model";
 }
 
-export function callLabel(instance: InstanceRecord, action: ActionRecord): string {
+export function callLabel(instance: InstanceView, action: ActionRecord): string {
   if (action.status === "lifecycle") return `${instance.model} ${action.method}d`;
   if (action.status === "external") return action.method;
   return `${variableName(instance.model)}.${action.method}(${action.args.map(a => toCode(a)).join(", ")})`;
 }
 
 /** A vitest / jest unit test that replays the action against the captured state. */
-export function testSnippet(instance: InstanceRecord, action: ActionRecord): string {
+export function testSnippet(instance: InstanceView, action: ActionRecord): string {
   if (action.status === "lifecycle" || action.status === "external") {
     return "// Only model method calls can be replayed as a test.";
   }

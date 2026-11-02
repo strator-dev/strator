@@ -22,6 +22,7 @@
   ],
   "exports": {
     ".": "./dist/index.mjs",
+    "./react": "./dist/react.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -52,7 +53,16 @@
   },
   "peerDependencies": {
     "@strator/core": ">=100.1.1",
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "inlinedDependencies": {
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "scheduler": "0.27.0"
   }
 }

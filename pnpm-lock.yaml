@@ -237,6 +237,24 @@ importers:
         specifier: 'catalog:'
         version: 0.3.1(@types/node@25.6.0)(happy-dom@17.6.3)(jiti@2.7.0)(typescript@6.0.2)(yaml@2.8.3)
 
+  packages/devtools-chrome:
+    devDependencies:
+      '@strator/devtools':
+        specifier: workspace:*
+        version: link:../devtools
+      vite:
+        specifier: 'catalog:'
+        version: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@25.6.0)(jiti@2.7.0)(typescript@6.0.2)(yaml@2.8.3)'
+
+  packages/devtools-firefox:
+    devDependencies:
+      '@strator/devtools':
+        specifier: workspace:*
+        version: link:../devtools
+      vite:
+        specifier: 'catalog:'
+        version: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@25.6.0)(jiti@2.7.0)(typescript@6.0.2)(yaml@2.8.3)'
+
   packages/react:
     devDependencies:
       '@strator/core':

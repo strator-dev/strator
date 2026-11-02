@@ -7,6 +7,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import { DevtoolsStore } from "../src/store.ts";
+import { StratorDevtools as WrappedDevtools } from "../src/react.ts";
 import { StratorDevtools, StratorDevtoolsPanel } from "../src/StratorDevtools.tsx";
 
 interface CounterState {
@@ -178,5 +179,15 @@ describe("devtools panel", () => {
     expect(shadow().querySelector(".sdt-dock")).not.toBeNull();
     await act(async () => button("Close devtools").click());
     expect(shadow().querySelector(".sdt-dock")).toBeNull();
+  });
+
+  test("the React wrapper mounts the bundled panel and removes it on unmount", async () => {
+    setWidth(1440);
+    await renderApp(<WrappedDevtools store={store} initialIsOpen />);
+    await flush();
+    expect(shadow().querySelector(".sdt-dock")).not.toBeNull();
+    await act(async () => root.render(<></>));
+    await flush();
+    expect(document.querySelector("[data-strator-devtools]")).toBeNull();
   });
 });

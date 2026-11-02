@@ -17,39 +17,11 @@ On narrow screens the Instances and Inspector panes fold into side rails and ope
 pnpm add -D @strator/devtools
 ```
 
-`@strator/core`, `react` and `react-dom` are peer dependencies.
+React and react-dom are bundled into the package, so the panel works the same in React, Vue or plain JS apps and never clashes with your app's React version. `@strator/core` is the only required peer dependency.
 
-## Usage (React)
+## Usage
 
-Render `<StratorDevtools />` once, anywhere. It does not need to be inside a `StratorProvider`:
-
-```tsx
-import { StratorDevtools } from "@strator/devtools";
-import { StratorProvider } from "@strator/react";
-
-createRoot(document.getElementById("root")!).render(
-  <>
-    <StratorProvider>
-      <App />
-    </StratorProvider>
-    {import.meta.env.DEV && <StratorDevtools />}
-  </>,
-);
-```
-
-It shows a launcher button in the corner; click it to open the panel docked to the bottom of the page (drag the top edge to resize, or maximize it).
-
-| Prop            | Default          | Description                                     |
-| --------------- | ---------------- | ----------------------------------------------- |
-| `initialIsOpen` | `false`          | Open the panel on first load (then remembered). |
-| `position`      | `"bottom-right"` | Corner of the launcher button.                  |
-| `initialHeight` | `420`            | Panel height in px (then remembered).           |
-
-To embed the panel in your own layout (a `/devtools` route, a split view), use `<StratorDevtoolsPanel height={600} />`.
-
-## Usage (Vue and others)
-
-`mountDevtools()` renders the same panel in its own React root:
+### Any app
 
 ```ts
 import { mountDevtools } from "@strator/devtools";
@@ -57,10 +29,42 @@ import { mountDevtools } from "@strator/devtools";
 if (import.meta.env.DEV) mountDevtools();
 ```
 
+It shows a launcher button in the corner; click it to open the panel docked to the bottom of the page (drag the top edge to resize, or maximize it). `mountDevtools()` returns a function that removes it again.
+
+| Option          | Default          | Description                                     |
+| --------------- | ---------------- | ----------------------------------------------- |
+| `initialIsOpen` | `false`          | Open the panel on first load (then remembered). |
+| `position`      | `"bottom-right"` | Corner of the launcher button.                  |
+| `initialHeight` | `420`            | Panel height in px (then remembered).           |
+| `container`     | `document.body`  | Element the devtools are appended to.           |
+
+To put the panel inside your own layout (a `/devtools` route, a split view), use `mountDevtoolsPanel(element)`.
+
+### React
+
+`@strator/devtools/react` wraps the same functions in components. They use your React only to know when to mount; the panel itself runs on the bundled React.
+
+```tsx
+import { StratorDevtools } from "@strator/devtools/react";
+
+<>
+  <StratorProvider>
+    <App />
+  </StratorProvider>
+  {import.meta.env.DEV && <StratorDevtools />}
+</>;
+```
+
+`<StratorDevtoolsPanel height={600} />` renders the panel in place.
+
+### Browser extension
+
+The same panel is available as a DevTools extension for Chrome (`packages/devtools-chrome`) and Firefox (`packages/devtools-firefox`). With the extension, the app needs no import at all: the extension installs the hook before the page's scripts run, and a **Strator** tab appears in the browser devtools.
+
 ## How it works
 
 Importing `@strator/devtools` installs a hook on `@strator/core`. Models created through the bindings then report their method calls (`Dispatcher.dispatchAction` / `dispatchActionFinish` / `dispatchActionError`), state writes, lifecycle and subscribers to it. Without the import nothing is collected.
 
-Import the package before your app renders its first model; instances created earlier are not tracked.
+Import the package before your app renders its first model; instances created earlier are not tracked. (The browser extensions install the hook at page start, so they see everything.)
 
 Writes that happen after an `await` inside an async method are attributed to that method while it is pending. Methods called after an `await` are logged as their own entries, because the synchronous call stack is gone by then.

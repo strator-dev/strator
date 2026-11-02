@@ -3,7 +3,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState, useSyncExternalSto
 import pkg from "../../package.json" with { type: "json" };
 import { LOGO_64 } from "../logo.ts";
 import { callLabel, testSnippet, variableName } from "../snippet.ts";
-import type { ActionRecord, ActionStatus, DevtoolsStore, InstanceRecord } from "../store.ts";
+import type { ActionRecord, ActionStatus, DevtoolsSource, InstanceView } from "../store.ts";
 import { childPath, formatValue, isJSONCompatible, isPlainContainer, toCode, toJSONValue } from "../values.ts";
 import {
   ArrowIcon,
@@ -98,11 +98,11 @@ function writeSetting(name: string, value: string): void {
   }
 }
 
-function keyLabel(instance: InstanceRecord): string {
+function keyLabel(instance: InstanceView): string {
   return instance.scope === "local" ? `useId ${instance.key}` : JSON.stringify(instance.key);
 }
 
-function instanceLabel(instance: InstanceRecord): string {
+function instanceLabel(instance: InstanceView): string {
   return instance.scope === "shared" ? `${instance.model} · ${instance.key}` : instance.model;
 }
 
@@ -123,7 +123,7 @@ function formatDuration(action: ActionRecord): string {
   return `${(action.duration / 1000).toFixed(2)}s`;
 }
 
-function matches(action: ActionRecord, instance: InstanceRecord | undefined, query: string): boolean {
+function matches(action: ActionRecord, instance: InstanceView | undefined, query: string): boolean {
   if (!query) return true;
   const haystack = instance
     ? `${variableName(instance.model)}.${action.method} ${instance.model} ${instance.key} ${STATUS_LABEL[action.status]}`
@@ -241,7 +241,7 @@ function isHit(path: string, changed: string[]): boolean {
 // ------------------------------------------------------------------------------------------ panel
 
 export interface DevtoolsPanelProps {
-  store: DevtoolsStore;
+  store: DevtoolsSource;
   /** Shows a close button in the header. */
   onClose?: () => void;
   /** Shows a maximize / restore button in the header. */
@@ -315,7 +315,7 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
     if (!compact) setDrawer(null);
   }, [compact]);
 
-  const pickInstance = (instance: InstanceRecord) => {
+  const pickInstance = (instance: InstanceView) => {
     setSelectedUid(instance.uid);
     setTab("state");
     const last = [...actions].reverse().find(a => a.instanceUid === instance.uid);
@@ -353,7 +353,7 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
   const sources = [...new Set([...store.containers.map(c => c.source), ...instances.map(i => i.source)])].filter(
     Boolean,
   );
-  const host = typeof location !== "undefined" ? location.host : "";
+  const host = store.host ?? (typeof location !== "undefined" ? location.host : "");
   const containerCount = store.containers.length;
 
   // ---------------------------------------------------------------- panes
@@ -444,7 +444,11 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
             type="button"
             className="sdt-btn"
             aria-label={narrow ? "Export session" : undefined}
-            onClick={() => downloadJSON(`strator-session-${Date.now()}.json`, store.exportSession())}
+            onClick={() => {
+              void Promise.resolve(store.exportSession()).then(data =>
+                downloadJSON(`strator-session-${Date.now()}.json`, data),
+              );
+            }}
           >
             <DownloadIcon />
             <span className="sdt-btn-label">Export session</span>
@@ -672,13 +676,13 @@ function InstancesPane({
   onCollapse,
   compact,
 }: {
-  instances: InstanceRecord[];
-  selected?: InstanceRecord;
+  instances: readonly InstanceView[];
+  selected?: InstanceView;
   scopeFilter: ScopeFilter;
   setScopeFilter: (scope: ScopeFilter) => void;
   liveCount: number;
   disposedCount: number;
-  onPick: (instance: InstanceRecord) => void;
+  onPick: (instance: InstanceView) => void;
   onCollapse: () => void;
   compact: boolean;
 }) {
@@ -793,7 +797,7 @@ function ActionLog({
   emptyTitle,
 }: {
   rows: ActionRecord[];
-  byUid: Map<number, InstanceRecord>;
+  byUid: Map<number, InstanceView>;
   selectedId?: number;
   timeFormat: TimeFormat;
   onPick: (action: ActionRecord) => void;
@@ -916,10 +920,10 @@ function Inspector({
   onCollapse,
   compact,
 }: {
-  store: DevtoolsStore;
-  instance?: InstanceRecord;
+  store: DevtoolsSource;
+  instance?: InstanceView;
   action?: ActionRecord;
-  byUid: Map<number, InstanceRecord>;
+  byUid: Map<number, InstanceView>;
   tab: InspectorTab;
   setTab: (tab: InspectorTab) => void;
   timeFormat: TimeFormat;
@@ -1025,8 +1029,8 @@ function StateTab({
   instance,
   action,
 }: {
-  store: DevtoolsStore;
-  instance: InstanceRecord;
+  store: DevtoolsSource;
+  instance: InstanceView;
   action?: ActionRecord;
 }) {
   const [copied, copy] = useCopy();
@@ -1039,10 +1043,10 @@ function StateTab({
 
   const changed = action ? action.changes.map(c => c.path) : [];
   const lines = buildTree(instance.snapshot);
-  const editable = !instance.disposed && !!instance.handle.replaceState && isJSONCompatible(instance.snapshot);
+  const editable = !instance.disposed && instance.canReplace && isJSONCompatible(instance.snapshot);
   const editHint = instance.disposed
     ? "Disposed instances cannot be edited"
-    : !instance.handle.replaceState
+    : !instance.canReplace
       ? "This model's state lives in an external store"
       : !editable
         ? "Only JSON state (no Maps, Dates or class instances) can be edited here"
@@ -1155,8 +1159,8 @@ function ActionTab({
   timeFormat,
   onPickAction,
 }: {
-  store: DevtoolsStore;
-  instance: InstanceRecord;
+  store: DevtoolsSource;
+  instance: InstanceView;
   action: ActionRecord;
   timeFormat: TimeFormat;
   onPickAction: (action: ActionRecord) => void;
@@ -1165,7 +1169,7 @@ function ActionTab({
   const isCall = action.status !== "lifecycle" && action.status !== "external";
   const parent = action.parentId === undefined ? undefined : store.getAction(action.parentId);
   const snippet = testSnippet(instance, action);
-  const canReplace = !instance.disposed && !!instance.handle.replaceState && action.before !== undefined;
+  const canReplace = !instance.disposed && instance.canReplace && action.before !== undefined;
 
   return (
     <div className="sdt-insp-body" style={{ gap: 16 }}>
@@ -1273,7 +1277,7 @@ function ActionTab({
           className="sdt-btn sdt-btn-primary"
           disabled={!canReplace}
           title={canReplace ? "Replace the instance's state with the state before this action" : undefined}
-          onClick={() => store.replaceState(instance.uid, action.before, `devtools: jump to before ${action.method}()`)}
+          onClick={() => store.jumpBefore(action.id)}
         >
           Jump to state before
         </button>
@@ -1297,7 +1301,7 @@ function ActionTab({
   );
 }
 
-function SubscribersTab({ instance }: { instance: InstanceRecord }) {
+function SubscribersTab({ instance }: { instance: InstanceView }) {
   const subscribers = [...instance.subscribers];
   return (
     <div className="sdt-insp-body" style={{ gap: 10 }}>

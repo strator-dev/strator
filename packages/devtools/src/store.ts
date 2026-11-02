@@ -14,10 +14,10 @@ import { cloneValue, diffValues, type StateChange, toJSONValue } from "./values.
 
 export type ActionStatus = "pending" | "done" | "threw" | "lifecycle" | "external";
 
-export interface InstanceRecord {
+/** What the panel needs to know about an instance. Plain data, so it can cross into a browser extension. */
+export interface InstanceView {
   /** Stable id inside devtools. */
   uid: number;
-  handle: DevtoolsModelHandle;
   model: string;
   key: string;
   scope: ModelScope;
@@ -32,6 +32,12 @@ export interface InstanceRecord {
   subscribers: Set<DevtoolsSubscriber>;
   /** Last captured copy of the state. */
   snapshot: unknown;
+  /** The state can be replaced (jump back, edit). False for models backed by an external store. */
+  canReplace: boolean;
+}
+
+export interface InstanceRecord extends InstanceView {
+  handle: DevtoolsModelHandle;
 }
 
 export interface ActionRecord {
@@ -58,6 +64,32 @@ export interface ActionRecord {
   after?: unknown;
   /** Lifecycle / external entries: what happened. */
   note?: string;
+  /** Bumped on every change to this entry; lets the extension bridge send only what changed. */
+  rev?: number;
+}
+
+/**
+ * What the panel renders from: the in-page `DevtoolsStore`, or a mirror of one living in another page
+ * (the browser extension's `RemoteDevtoolsSource`).
+ */
+export interface DevtoolsSource {
+  readonly instances: readonly InstanceView[];
+  readonly actions: readonly ActionRecord[];
+  readonly containers: ReadonlyArray<{ source: string }>;
+  readonly recording: boolean;
+  /** Host of the inspected page, when it is not the page the panel runs in. */
+  readonly host?: string;
+  subscribe: (listener: () => void) => () => void;
+  getRevision: () => number;
+  getAction(id: number): ActionRecord | undefined;
+  setRecording(recording: boolean): void;
+  clear(): void;
+  replaceState(uid: number, state: unknown, label?: string): unknown;
+  /** Puts the action's instance back into the state it had right before the action. */
+  jumpBefore(actionId: number): unknown;
+  dispatchAgain(actionId: number): unknown;
+  /** JSON-safe session dump; may be async when the data lives in another page. */
+  exportSession(): unknown;
 }
 
 interface InternalInstance extends InstanceRecord {
@@ -84,7 +116,7 @@ function errorInfo(error: unknown): ActionRecord["error"] {
  * Collects everything Strator reports while devtools are installed: model instances, method calls and
  * the state changes they cause. Framework-agnostic; the panel renders from it.
  */
-export class DevtoolsStore implements DevtoolsHook {
+export class DevtoolsStore implements DevtoolsHook, DevtoolsSource {
   public instances: InstanceRecord[] = [];
   public actions: ActionRecord[] = [];
   public containers: DevtoolsContainer[] = [];
@@ -119,6 +151,12 @@ export class DevtoolsStore implements DevtoolsHook {
 
   public getRevision = (): number => this.revision;
 
+  private nextRev = 1;
+
+  private touch(action: ActionRecord): void {
+    action.rev = this.nextRev++;
+  }
+
   private notify(): void {
     this.revision += 1;
     if (this.notifyScheduled) return;
@@ -146,6 +184,7 @@ export class DevtoolsStore implements DevtoolsHook {
       disposed: false,
       subscribers: new Set(),
       snapshot: cloneValue(handle.getState()),
+      canReplace: typeof handle.replaceState === "function",
       dirty: false,
       flushScheduled: false,
     };
@@ -217,6 +256,7 @@ export class DevtoolsStore implements DevtoolsHook {
     if (event.status === "done") action.result = cloneValue(event.result);
     else action.error = errorInfo(event.error);
     action.after = record.snapshot;
+    this.touch(action);
     this.notify();
   }
 
@@ -288,7 +328,10 @@ export class DevtoolsStore implements DevtoolsHook {
     if (action) {
       // Nested calls on the same instance also count towards their callers.
       for (let current: ActionRecord | undefined = action; current;) {
-        if (current.instanceUid === record.uid) current.changes.push(...changes);
+        if (current.instanceUid === record.uid) {
+          current.changes.push(...changes);
+          this.touch(current);
+        }
         current = current.parentId === undefined ? undefined : this.actionsById.get(current.parentId);
       }
     } else if (this.recording) {
@@ -314,6 +357,7 @@ export class DevtoolsStore implements DevtoolsHook {
   }
 
   private pushAction(action: ActionRecord): void {
+    this.touch(action);
     this.actions.push(action);
     this.actionsById.set(action.id, action);
     if (this.actions.length > this.maxActions) {
@@ -369,6 +413,12 @@ export class DevtoolsStore implements DevtoolsHook {
       this.replacing = undefined;
     }
     return true;
+  }
+
+  public jumpBefore(actionId: number): boolean {
+    const action = this.getAction(actionId);
+    if (!action || action.before === undefined) return false;
+    return this.replaceState(action.instanceUid, action.before, `devtools: jump to before ${action.method}()`);
   }
 
   /** Calls the action's method again with a copy of its original arguments. */

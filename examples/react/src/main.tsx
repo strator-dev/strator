@@ -1,4 +1,4 @@
-import { StratorDevtools } from "@strator/devtools";
+import { StratorDevtools } from "@strator/devtools/react";
 import { StratorProvider } from "@strator/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
