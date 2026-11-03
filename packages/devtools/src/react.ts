@@ -5,7 +5,11 @@
  */
 import { createElement, type CSSProperties, type ReactElement, useEffect, useRef } from "react";
 import { mountDevtools, mountDevtoolsPanel, type MountDevtoolsOptions } from "./mount.tsx";
-import type { DevtoolsStore } from "./store.ts";
+import { type DevtoolsStore, installDevtools } from "./store.ts";
+
+// Installed on import, like the main entry: the panel mounts in its own root after the app's first
+// commit, which is too late for the StratorProvider (it registers in an effect) and the first models.
+installDevtools();
 
 export type StratorDevtoolsProps = Omit<MountDevtoolsOptions, "container">;
 

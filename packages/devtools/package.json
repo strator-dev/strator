@@ -18,7 +18,8 @@
   ],
   "type": "module",
   "sideEffects": [
-    "./dist/index.mjs"
+    "./dist/index.mjs",
+    "./dist/react.mjs"
   ],
   "exports": {
     ".": "./dist/index.mjs",
