@@ -102,6 +102,13 @@ export const STYLES = `
 .sdt-h3 { margin: 0; font-size: 12px; font-weight: 600; color: var(--fg-2); }
 .sdt-count { font-family: var(--mono); font-size: 11px; padding: 1px 8px; border-radius: 999px; background: rgb(148 163 184 / 0.1); color: var(--fg-3); }
 
+/* Drag handle between a side pane and the log: no width of its own, an 8px hit area over the border. */
+.sdt-splitter { position: relative; flex: 0 0 0; z-index: 5; outline: none; touch-action: none; }
+.sdt-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: -4px; width: 8px; cursor: col-resize; }
+.sdt-splitter:hover::before, .sdt-splitter:focus-visible::before, .sdt-splitter[data-dragging]::before { background: rgb(34 211 238 / 0.35); }
+.sdt-root[data-resizing] { cursor: col-resize; user-select: none; }
+.sdt-root[data-resizing] * { cursor: col-resize !important; }
+
 /* Collapsed pane: a slim rail with a button that brings the pane back. */
 .sdt-rail {
   flex: 0 0 40px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0;

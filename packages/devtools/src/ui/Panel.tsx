@@ -28,6 +28,17 @@ const VERSION: string = pkg.version;
 /** Below this panel width the side panes collapse into rails and open as drawers over the log. */
 export const COMPACT_WIDTH = 1100;
 
+/** Side pane widths in the wide layout: draggable within these bounds and remembered per browser. */
+export const PANE_SIZES = {
+  instances: { min: 200, max: 560, initial: 260 },
+  inspector: { min: 300, max: 900, initial: 400 },
+} as const;
+type SidePane = keyof typeof PANE_SIZES;
+/** Growing a side pane never squeezes the action log below this. */
+const MIN_LOG_WIDTH = 360;
+/** Width of a folded pane (`.sdt-rail`). */
+const RAIL_WIDTH = 40;
+
 type TimeFormat = "relative" | "clock";
 type InspectorTab = "state" | "action" | "subs";
 type ScopeFilter = "all" | ModelScope;
@@ -87,6 +98,16 @@ function readSetting<T extends string>(name: string, fallback: T, allowed: reado
     return value && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
   } catch {
     return fallback;
+  }
+}
+
+function readPaneWidth(pane: SidePane): number {
+  const { min, max, initial } = PANE_SIZES[pane];
+  try {
+    const value = Number(globalThis.localStorage?.getItem(`strator-devtools:${pane}Width`) ?? Number.NaN);
+    return Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : initial;
+  } catch {
+    return initial;
   }
 }
 
@@ -276,6 +297,16 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
   );
   // Compact layout: at most one pane is open, as a drawer over the log.
   const [drawer, setDrawer] = useState<"instances" | "inspector" | null>(null);
+  const [paneWidths, setPaneWidths] = useState<Record<SidePane, number>>(() => ({
+    instances: readPaneWidth("instances"),
+    inspector: readPaneWidth("inspector"),
+  }));
+  const instancesRef = useRef<HTMLElement>(null);
+  const inspectorRef = useRef<HTMLElement>(null);
+  const resizePane = (pane: SidePane, next: number) => {
+    setPaneWidths(widths => (widths[pane] === next ? widths : { ...widths, [pane]: next }));
+    writeSetting(`${pane}Width`, String(next));
+  };
 
   const instances = store.instances;
   const actions = store.actions;
@@ -388,6 +419,22 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
 
   const showInstancesInline = !compact && instancesOpen;
   const showInspectorInline = !compact && inspectorOpen;
+
+  // The remembered widths, fitted so the log keeps MIN_LOG_WIDTH. The inspector is fitted first (leaving
+  // the instances pane its minimum), then the instances pane gets what is left. While dragging, a pane
+  // can grow until the log reaches its minimum, given the other pane's current width.
+  const fitPane = (pane: SidePane, wanted: number, room: number) =>
+    Math.round(Math.max(PANE_SIZES[pane].min, Math.min(wanted, PANE_SIZES[pane].max, room)));
+  const roomFor = (otherShown: boolean, otherWidth: number) =>
+    width - MIN_LOG_WIDTH - (otherShown ? otherWidth : RAIL_WIDTH);
+  const inspectorWidth = fitPane(
+    "inspector",
+    paneWidths.inspector,
+    roomFor(showInstancesInline, PANE_SIZES.instances.min),
+  );
+  const instancesMax = fitPane("instances", Infinity, roomFor(showInspectorInline, inspectorWidth));
+  const instancesWidth = Math.min(fitPane("instances", paneWidths.instances, Infinity), instancesMax);
+  const inspectorMax = fitPane("inspector", Infinity, roomFor(showInstancesInline, instancesWidth));
 
   return (
     <div
@@ -508,9 +555,26 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
 
       <div className="sdt-body">
         {showInstancesInline ? (
-          <nav className="sdt-pane sdt-instances" aria-label="Model instances">
-            {instancesPane}
-          </nav>
+          <>
+            <nav
+              ref={instancesRef}
+              className="sdt-pane sdt-instances"
+              aria-label="Model instances"
+              style={{ flexBasis: instancesWidth }}
+            >
+              {instancesPane}
+            </nav>
+            <PaneResizer
+              side="left"
+              label="Resize instances pane"
+              paneRef={instancesRef}
+              value={instancesWidth}
+              min={PANE_SIZES.instances.min}
+              max={instancesMax}
+              initial={PANE_SIZES.instances.initial}
+              onResize={next => resizePane("instances", next)}
+            />
+          </>
         ) : (
           <Rail
             side="left"
@@ -579,9 +643,26 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
         </section>
 
         {showInspectorInline ? (
-          <aside className="sdt-pane sdt-inspector" aria-label="Inspector">
-            {inspectorPane}
-          </aside>
+          <>
+            <PaneResizer
+              side="right"
+              label="Resize inspector pane"
+              paneRef={inspectorRef}
+              value={inspectorWidth}
+              min={PANE_SIZES.inspector.min}
+              max={inspectorMax}
+              initial={PANE_SIZES.inspector.initial}
+              onResize={next => resizePane("inspector", next)}
+            />
+            <aside
+              ref={inspectorRef}
+              className="sdt-pane sdt-inspector"
+              aria-label="Inspector"
+              style={{ flexBasis: inspectorWidth }}
+            >
+              {inspectorPane}
+            </aside>
+          </>
         ) : (
           <Rail
             side="right"
@@ -618,6 +699,98 @@ export function DevtoolsPanel({ store, onClose, onToggleMaximize, maximized }: D
         </span>
       </footer>
     </div>
+  );
+}
+
+// ------------------------------------------------------------------------------------------ resizer
+
+/**
+ * Drag handle between a side pane and the action log; also works with the arrow keys (Shift for bigger
+ * steps), Home / End, and a double-click resets the default width. While dragging, the width is written
+ * straight to the pane so the whole panel doesn't re-render on every pointer move; `onResize` runs once
+ * the drag ends.
+ */
+function PaneResizer({
+  side,
+  label,
+  paneRef,
+  value,
+  min,
+  max,
+  initial,
+  onResize,
+}: {
+  /** Which side of the log the pane sits on; dragging towards the log widens it. */
+  side: "left" | "right";
+  label: string;
+  paneRef: React.RefObject<HTMLElement | null>;
+  value: number;
+  min: number;
+  max: number;
+  initial: number;
+  onResize: (width: number) => void;
+}) {
+  const drag = useRef<{ startX: number; width: number; handle: HTMLElement } | null>(null);
+  const direction = side === "left" ? 1 : -1;
+  const clamp = (next: number) => Math.round(Math.max(min, Math.min(max, next)));
+
+  const end = () => {
+    const current = drag.current;
+    if (!current) return;
+    drag.current = null;
+    delete current.handle.dataset.dragging;
+    delete current.handle.closest<HTMLElement>(".sdt-root")?.dataset.resizing;
+    onResize(current.width);
+  };
+
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={value}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      tabIndex={0}
+      className="sdt-splitter"
+      title="Drag to resize, double-click to reset"
+      onPointerDown={event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        const handle = event.currentTarget;
+        try {
+          handle.setPointerCapture(event.pointerId);
+        } catch {
+          // Without capture the drag still works while the pointer stays over the panel.
+        }
+        handle.dataset.dragging = "";
+        const root = handle.closest<HTMLElement>(".sdt-root");
+        if (root) root.dataset.resizing = "";
+        drag.current = { startX: event.clientX - direction * value, width: value, handle };
+      }}
+      onPointerMove={event => {
+        const current = drag.current;
+        if (!current) return;
+        current.width = clamp((event.clientX - current.startX) * direction);
+        current.handle.setAttribute("aria-valuenow", String(current.width));
+        if (paneRef.current) paneRef.current.style.flexBasis = `${current.width}px`;
+      }}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onLostPointerCapture={end}
+      onDoubleClick={() => onResize(clamp(initial))}
+      onKeyDown={event => {
+        const step = event.shiftKey ? 64 : 16;
+        let next: number;
+        if (event.key === "ArrowRight") next = value + step * direction;
+        else if (event.key === "ArrowLeft") next = value - step * direction;
+        else if (event.key === "Home") next = min;
+        else if (event.key === "End") next = max;
+        else return;
+        event.preventDefault();
+        onResize(clamp(next));
+      }}
+    />
   );
 }
 

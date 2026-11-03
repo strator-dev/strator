@@ -5,7 +5,7 @@ import { Model, setDevtoolsHook } from "@strator/core";
 import { StratorProvider, useGlobalModel, useLocalModel } from "@strator/react";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { DevtoolsStore } from "../src/store.ts";
 import { StratorDevtools as WrappedDevtools } from "../src/react.ts";
 import { StratorDevtools, StratorDevtoolsPanel } from "../src/StratorDevtools.tsx";
@@ -82,6 +82,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setDevtoolsHook(undefined);
+  vi.unstubAllGlobals();
   try {
     localStorage.clear();
   } catch {}
@@ -170,6 +171,65 @@ describe("devtools panel", () => {
     expect(shadow().querySelector("nav")).toBeNull();
     await act(async () => button("Show instances").click());
     expect(shadow().querySelector("nav")).not.toBeNull();
+  });
+
+  test("side panes are resizable by dragging and with the keyboard, and remember their width", async () => {
+    // Node's own (disabled) localStorage global shadows happy-dom's here, so use an in-memory one.
+    const saved = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => void saved.set(key, value),
+      clear: () => saved.clear(),
+    });
+    setWidth(1440);
+    await renderApp(<StratorDevtoolsPanel store={store} height={600} />);
+    const separator = (label: string) =>
+      shadow().querySelector<HTMLElement>(`[role="separator"][aria-label="${label}"]`)!;
+    const pointer = (target: HTMLElement, type: string, clientX: number) =>
+      act(async () => {
+        target.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX }));
+      });
+    const nav = () => shadow().querySelector<HTMLElement>("nav")!;
+    const aside = () => shadow().querySelector<HTMLElement>("aside")!;
+
+    expect(nav().style.flexBasis).toBe("260px");
+    expect(aside().style.flexBasis).toBe("400px");
+
+    // Dragging the instances handle to the right widens the pane.
+    const instancesHandle = separator("Resize instances pane");
+    await pointer(instancesHandle, "pointerdown", 300);
+    await pointer(instancesHandle, "pointermove", 400);
+    expect(nav().style.flexBasis).toBe("360px");
+    await pointer(instancesHandle, "pointerup", 400);
+    expect(instancesHandle.getAttribute("aria-valuenow")).toBe("360");
+    expect(localStorage.getItem("strator-devtools:instancesWidth")).toBe("360");
+
+    // The inspector grows to the left, and stops where the log would get narrower than its minimum.
+    const inspectorHandle = separator("Resize inspector pane");
+    await pointer(inspectorHandle, "pointerdown", 1000);
+    await pointer(inspectorHandle, "pointermove", 0);
+    await pointer(inspectorHandle, "pointerup", 0);
+    expect(aside().style.flexBasis).toBe(`${1440 - 360 - 360}px`);
+
+    // Keyboard: arrows step, Home / End jump to the bounds; double-click resets.
+    await act(async () => {
+      inspectorHandle.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    });
+    expect(aside().style.flexBasis).toBe("300px");
+    await act(async () => {
+      inspectorHandle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+    });
+    expect(aside().style.flexBasis).toBe("316px");
+    await act(async () => {
+      inspectorHandle.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    });
+    expect(aside().style.flexBasis).toBe("400px");
+
+    // A new panel picks the remembered widths up.
+    await act(async () => root.render(<></>));
+    await renderApp(<StratorDevtoolsPanel store={store} height={600} />);
+    expect(nav().style.flexBasis).toBe("360px");
+    expect(aside().style.flexBasis).toBe("400px");
   });
 
   test("the floating launcher opens and closes the docked panel", async () => {
