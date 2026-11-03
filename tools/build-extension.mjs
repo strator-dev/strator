@@ -46,10 +46,12 @@ for (const [index, name] of ENTRIES.entries()) {
   });
 }
 
-// The manifest's version follows the package version.
+// The manifest's version follows the package version. Browsers only accept dotted numbers there, so a
+// pre-release like 100.2.0-beta.1 becomes 100.2.0, and `version_name` keeps the full version.
 const manifestPath = join(outDir, "manifest.json");
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-manifest.version = pkg.version;
+manifest.version = pkg.version.replace(/[-+].*$/, "");
+manifest.version_name = pkg.version;
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 // Icons come from the website's brand assets.

@@ -9,6 +9,13 @@ pnpm --filter @strator/devtools-chrome build   # → packages/devtools-chrome/di
 pnpm --filter @strator/devtools-chrome zip     # → strator-devtools-chrome.zip, for the Chrome Web Store
 ```
 
+## Install from a release
+
+1. Download [`strator-devtools-chrome.zip`](https://github.com/strator-dev/strator/releases/latest/download/strator-devtools-chrome.zip) from the latest release and unzip it.
+2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the unzipped folder.
+
+The release workflow builds both zips and attaches them to every GitHub release.
+
 ## Install locally
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
@@ -16,6 +23,14 @@ pnpm --filter @strator/devtools-chrome zip     # → strator-devtools-chrome.zip
 3. Open any page that uses Strator, open DevTools, and pick the **Strator** tab.
 
 Works in Chrome 111+ and other Chromium browsers (Edge, Brave, Arc).
+
+## Publishing to the Chrome Web Store
+
+The release workflow (`.github/workflows/npm-publish.yml`, job `publish-chrome`) uploads the release zip with `tools/publish-chrome-extension.mjs` and submits it for review. The job may fail without failing the release. It needs, once:
+
+1. The first version uploaded by hand in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), with the Store listing and Privacy tabs filled in. The API cannot create items.
+2. A Google Cloud project with the Chrome Web Store API enabled, and a service account in it, added under **Account → Service accounts** in the Developer Dashboard.
+3. In the GitHub `production` environment: the secret `CWS_SERVICE_ACCOUNT_KEY` (the service account's JSON key) and the variables `CWS_PUBLISHER_ID` and `CWS_EXTENSION_ID`.
 
 ## How it works
 

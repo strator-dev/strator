@@ -39,6 +39,7 @@ export function Header() {
   const isHome = pathname === "/" || pathname === "";
   const isReact = pathname?.startsWith("/react");
   const isVue = pathname?.startsWith("/vue");
+  const isDevtools = pathname?.startsWith("/devtools");
 
   return (
     <header
@@ -107,6 +108,17 @@ export function Header() {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span>Vue</span>
+            </Link>
+
+            <Link
+              href="/devtools/"
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                isDevtools
+                  ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
+                  : "text-slate-300 hover:text-cyan-400 hover:bg-white/5"
+              }`}
+            >
+              Devtools
             </Link>
 
             <a
@@ -192,6 +204,16 @@ export function Header() {
           >
             <span>Vue Guide (@strator/vue)</span>
             <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Docs</span>
+          </Link>
+          <Link
+            href="/devtools/"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center justify-between px-3 py-2 rounded-md text-base font-medium ${
+              isDevtools ? "text-cyan-400 bg-cyan-500/10 font-semibold" : "text-slate-200 hover:bg-slate-800"
+            }`}
+          >
+            <span>Devtools (Chrome &amp; Firefox)</span>
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Download</span>
           </Link>
           <a
             href={isHome ? "#architecture" : "/#architecture"}

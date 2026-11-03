@@ -23,6 +23,8 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -73,6 +75,33 @@ jobs:
       - name: Run tests
         run: vp test
 
+      # Before publishing, so a broken extension build stops the release before anything reaches npm.
+      # The asset names carry no version, so releases/latest/download/<name> always serves the newest.
+      - name: Package browser extensions
+        run: |
+          out="$PWD/release"
+          mkdir -p "$out"
+          for browser in chrome firefox; do
+            dist="packages/devtools-$browser/dist"
+            built=$(node -p "require('./$dist/manifest.json').version_name")
+            if [ "$built" != "$VERSION" ]; then
+              echo "::error::$dist/manifest.json is v$built, expected v$VERSION"
+              exit 1
+            fi
+            (cd "$dist" && zip -qr "$out/strator-devtools-$browser.zip" .)
+          done
+          # The minified add-on needs its human-readable source for the AMO review: every tracked file as it
+          # is now, i.e. with the version bump applied, so reviewers can rebuild the exact same package.
+          git ls-files -z | xargs -0 zip -q "$out/strator-source.zip"
+          ls -l "$out"
+
+      - name: Keep the packages for the store submissions
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-packages
+          path: release/
+          retention-days: 30
+
       - name: Publish packages to NPM
         run: pnpm -r --filter "@strator/*" publish --access public --no-git-checks
 
@@ -100,6 +129,10 @@ jobs:
           # On a manual run github.ref_name is the branch, so derive the tag from the resolved version.
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
           name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.version.outputs.version) }}
+          files: |
+            release/strator-devtools-chrome.zip
+            release/strator-devtools-firefox.zip
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -118,3 +151,85 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
+
+  # Store submissions. Both may fail for now (missing credentials, first versions not created in the
+  # stores yet) without failing the release: npm, the GitHub release and the website are already done.
+  # Pre-releases are skipped, since the stores only accept numeric versions and a 100.2.0-beta.1 upload
+  # (as 100.2.0) would block the real 100.2.0.
+  publish-chrome:
+    name: Submit to the Chrome Web Store
+    needs: release
+    if: ${{ !contains(needs.release.outputs.version, '-') }}
+    runs-on: ubuntu-latest
+    environment: production
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: store-packages
+          path: release
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Setup: see the comment at the top of tools/publish-chrome-extension.mjs.
+      - name: Upload and submit for review
+        run: node tools/publish-chrome-extension.mjs release/strator-devtools-chrome.zip
+        env:
+          CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+
+  publish-firefox:
+    name: Submit to Firefox Add-ons
+    needs: release
+    if: ${{ !contains(needs.release.outputs.version, '-') }}
+    runs-on: ubuntu-latest
+    environment: production
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: store-packages
+          path: release
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Needs an AMO API key (https://addons.mozilla.org/developers/addon/api/key/): the JWT issuer and
+      # secret. The first submission creates the listing from packages/devtools-firefox/amo-metadata.json;
+      # later ones add a version. web-ext submits for review and returns without waiting for approval.
+      - name: Submit for review
+        run: |
+          if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
+            echo "::error::Missing the AMO_JWT_ISSUER / AMO_JWT_SECRET secrets"
+            exit 1
+          fi
+          mkdir -p firefox
+          unzip -q release/strator-devtools-firefox.zip -d firefox
+          npx --yes web-ext@8 sign \
+            --channel listed \
+            --source-dir firefox \
+            --upload-source-code release/strator-source.zip \
+            --amo-metadata packages/devtools-firefox/amo-metadata.json \
+            --approval-timeout 0 \
+            --artifacts-dir web-ext-artifacts
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}

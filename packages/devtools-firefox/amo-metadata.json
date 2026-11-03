@@ -1,0 +1,13 @@
+{
+  "categories": ["web-development"],
+  "summary": {
+    "en-US": "Inspect Strator model instances, method calls, state diffs and subscribers in a Strator tab of the Firefox Developer Tools."
+  },
+  "homepage": {
+    "en-US": "https://strator.dev/devtools/"
+  },
+  "version": {
+    "license": "MIT",
+    "approval_notes": "The scripts are bundled and minified, so the human-readable source is attached: a snapshot of https://github.com/strator-dev/strator at this release, with the package versions already set.\n\nTo build: Node.js 24 and pnpm 10.33 (`corepack enable` picks the version from package.json), then run\n\n  pnpm install --frozen-lockfile\n  pnpm --filter \"@strator/*\" build\n\nThe add-on is written to packages/devtools-firefox/dist. Its sources are in packages/devtools/src/extension (shared with the Chrome extension), packages/devtools/src/ui (the panel) and packages/devtools-firefox/src (entry points). tools/build-extension.mjs builds each script with Vite as a standalone minified IIFE; React is bundled into the panel.\n\nThe add-on talks only to the inspected page and its own DevTools panel. It sends nothing over the network and collects no data. The two innerHTML warnings from the linter are inside the bundled react-dom (production build); the add-on's own code never sets innerHTML."
+  }
+}

@@ -76,6 +76,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/devtools/" className="hover:text-cyan-400 transition-colors">
+                  Devtools for Chrome &amp; Firefox
+                </Link>
+              </li>
+              <li>
                 <a href="/#architecture" className="hover:text-cyan-400 transition-colors">
                   Architecture &amp; MVVM
                 </a>
@@ -122,6 +127,15 @@ export function Footer() {
                 </Link>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
                   v{vuePackage.version}
+                </span>
+              </li>
+              <li className="flex items-center justify-between text-slate-300">
+                <Link href="/devtools/" className="hover:text-cyan-300 transition-colors underline decoration-dotted">
+                  @strator/devtools
+                </Link>
+                {/* Released together with @strator/core, under the same version. */}
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                  v{corePackage.version}
                 </span>
               </li>
               <li className="text-slate-500">
