@@ -2,7 +2,7 @@ import type { Model, ModelCtor } from "@strator/core";
 import { getCurrentInstance, getCurrentScope, onScopeDispose, useId } from "vue";
 import { useStratorContext } from "./context.ts";
 import type { ModelResult, ModelSelectorResult, Selector } from "./types.ts";
-import { useModel } from "./useModel.ts";
+import { useScopedModel } from "./useModel.ts";
 
 let fallbackLocalId = 0;
 
@@ -32,5 +32,5 @@ export function useLocalModel<T extends object, TModel extends Model<T>, TResult
     });
   }
 
-  return (useModel as any)(id, model, selector);
+  return useScopedModel(id, model, selector, "local", "useLocalModel");
 }

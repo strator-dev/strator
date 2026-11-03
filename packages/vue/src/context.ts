@@ -1,4 +1,4 @@
-import { Model, type ModelCtor } from "@strator/core";
+import { Model, type ModelCtor, type ModelScope, reportToDevtools } from "@strator/core";
 import { inject, type InjectionKey, provide, reactive } from "vue";
 import { cloneState, VueDispatcher } from "./dispatcher.ts";
 import type { InitialStateMap, InitialStateRecord, StratorContextValue } from "./types.ts";
@@ -46,7 +46,11 @@ export function createStratorContext(initialState?: InitialStateMap): StratorCon
     return cloneState(ctor.initialState);
   };
 
-  const getModel = <T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel => {
+  const getModel = <T extends object, TModel extends Model<T>>(
+    key: string,
+    ctor: ModelCtor<T, TModel>,
+    options?: { scope?: ModelScope },
+  ): TModel => {
     const existing = models.get(key);
     if (existing) {
       if (existing.constructor !== ctor) {
@@ -60,7 +64,12 @@ export function createStratorContext(initialState?: InitialStateMap): StratorCon
     const state = getInitialStateFor(key, ctor);
     const modelDispatcher = dispatcher.getDispatcher(key);
     const reactiveState = reactive(cloneState(state)) as T;
-    const instance = Model.withInternalState(ctor, state, modelDispatcher);
+    const instance = Model.withInternalState(ctor, state, modelDispatcher, {
+      key,
+      scope: options?.scope ?? "shared",
+      source: "@strator/vue",
+      container: models,
+    });
     modelDispatcher.setReactiveState(reactiveState, () => instance.getState());
     models.set(key, instance);
     return instance;
@@ -84,9 +93,13 @@ export function createStratorContext(initialState?: InitialStateMap): StratorCon
   };
 
   const disposeModel = (key: string): void => {
+    const instance = models.get(key);
+    if (instance) reportToDevtools(hook => hook.disposeModel(instance));
     models.delete(key);
     dispatcher.removeDispatcher(key);
   };
+
+  reportToDevtools(hook => hook.registerContainer({ source: "@strator/vue", id: models }));
 
   return {
     dispatcher,

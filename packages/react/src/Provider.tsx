@@ -1,5 +1,6 @@
-import { Model, type ModelCtor } from "@strator/core";
-import React, { createContext, type RefObject, useContext, useMemo, useRef } from "react";
+import { Model, type ModelCtor, type ModelScope, reportToDevtools } from "@strator/core";
+import React, { createContext, type RefObject, useContext, useEffect, useMemo, useRef } from "react";
+import { SOURCE } from "./devtools.ts";
 import { createSnapshot } from "./snapshot.ts";
 import { ReactDispatcher, type ReactModelDispatcher } from "./ReactDispatcher.ts";
 
@@ -15,7 +16,12 @@ export interface StratorContext {
   dispatcher: RefObject<ReactDispatcher>;
   models: RefObject<Map<string, Model<any>>>;
   refCounts: RefObject<Map<string, number>>;
-  getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel;
+  /** `options.scope` only describes the instance to devtools. */
+  getModel<T extends object, TModel extends Model<T>>(
+    key: string,
+    ctor: ModelCtor<T, TModel>,
+    options?: { scope?: ModelScope },
+  ): TModel;
   subscribeToStateChange(key: string, callback: () => void): () => void;
   /** Subscribes to changes of a specific model instance, regardless of whether its key is still registered. */
   subscribeToModel(instance: Model<any>, callback: () => void): () => void;
@@ -94,6 +100,7 @@ export function Provider({ children, initialState }: ProviderProps) {
       dispatcher.current.removeDispatcher(key);
       refCounts.current.delete(key);
       if (instance) {
+        reportToDevtools(hook => hook.disposeModel(instance));
         modelDispatchers.current.get(instance)?.notify();
       }
     };
@@ -135,7 +142,11 @@ export function Provider({ children, initialState }: ProviderProps) {
       dispatcher,
       models,
       refCounts,
-      getModel<T extends object, TModel extends Model<T>>(key: string, ctor: ModelCtor<T, TModel>): TModel {
+      getModel<T extends object, TModel extends Model<T>>(
+        key: string,
+        ctor: ModelCtor<T, TModel>,
+        options?: { scope?: ModelScope },
+      ): TModel {
         const existing = models.current.get(key);
         if (existing) {
           if (existing.constructor !== ctor) {
@@ -148,7 +159,12 @@ export function Provider({ children, initialState }: ProviderProps) {
         }
         const state = getInitialStateFor(key, ctor);
         const modelDispatcher = dispatcher.current.getDispatcher(key);
-        const instance = Model.withInternalState(ctor, state, modelDispatcher);
+        const instance = Model.withInternalState(ctor, state, modelDispatcher, {
+          key,
+          scope: options?.scope ?? "shared",
+          source: SOURCE,
+          container: models.current,
+        });
         models.current.set(key, instance);
         modelDispatchers.current.set(instance, modelDispatcher);
         return instance;
@@ -174,6 +190,14 @@ export function Provider({ children, initialState }: ProviderProps) {
       releaseModel,
       disposeModel,
     };
+  }, []);
+
+  useEffect(() => {
+    let unregister: (() => void) | undefined;
+    reportToDevtools(hook => {
+      unregister = hook.registerContainer({ source: SOURCE, id: models.current });
+    });
+    return () => unregister?.();
   }, []);
 
   return <context.Provider value={ctx}>{children}</context.Provider>;

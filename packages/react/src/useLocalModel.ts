@@ -1,7 +1,7 @@
 import type { Model, ModelCtor } from "@strator/core";
 import { useId } from "react";
 import type { Selector } from "./types.ts";
-import { useModel } from "./useModel.ts";
+import { useScopedModel } from "./useScopedModel.ts";
 
 export function useLocalModel<T extends object, TModel extends Model<T>, TResult>(
   model: ModelCtor<T, TModel>,
@@ -20,5 +20,5 @@ export function useLocalModel<T extends object, TModel extends Model<T>, TResult
 ): [TModel, TResult | undefined] {
   const id = useId();
 
-  return useModel(id, model, selector);
+  return useScopedModel(id, model, selector, "local", "useLocalModel");
 }

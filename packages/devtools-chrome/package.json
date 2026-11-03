@@ -1,0 +1,22 @@
+{
+  "name": "@strator/devtools-chrome",
+  "version": "100.1.1",
+  "private": true,
+  "description": "Strator devtools as a Chrome DevTools extension",
+  "license": "MIT",
+  "author": "Lukáš Krotovič <lukas.krotovic@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/strator-dev/strator.git",
+    "directory": "packages/devtools-chrome"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "node ../../tools/build-extension.mjs chrome",
+    "zip": "vp run build && cd dist && zip -qr ../strator-devtools-chrome.zip ."
+  },
+  "devDependencies": {
+    "@strator/devtools": "workspace:*",
+    "vite": "catalog:"
+  }
+}

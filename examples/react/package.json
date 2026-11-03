@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@strator/core": "workspace:*",
+    "@strator/devtools": "workspace:*",
     "@strator/react": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"

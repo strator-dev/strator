@@ -4,6 +4,7 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "./assets/vite.svg";
 import heroImg from "./assets/hero.png";
 import "./App.css";
+import { DevtoolsDemo } from "./DevtoolsDemo.tsx";
 
 type CounterModelState = {
   count: number;
@@ -39,6 +40,7 @@ function App() {
         <button className="counter" onClick={() => counter.increase()}>
           Count is {count}
         </button>
+        <DevtoolsDemo />
       </section>
 
       <div className="ticks"></div>
