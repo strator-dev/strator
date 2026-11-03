@@ -9,7 +9,7 @@ In-app devtools for **Strator**. See every model instance your app holds, every 
   - **Action**: arguments, return value or error, a leaf-level state diff, a ready-to-paste unit test that replays the call, "Jump to state before" and "Dispatch again".
   - **Subscribers**: the components using the instance, the hook and selector they use, and how often they rendered.
 
-On narrow screens the Instances and Inspector panes fold into side rails and open as drawers over the action log. On wide screens either pane can be folded away too.
+On wide screens the Instances and Inspector panes can be resized by dragging their edge (or with the arrow keys; double-click resets) and folded away. On narrow screens they fold into side rails and open as drawers over the action log.
 
 ## Installation
 
@@ -59,7 +59,7 @@ import { StratorDevtools } from "@strator/devtools/react";
 
 ### Browser extension
 
-The same panel is available as a DevTools extension for Chrome (`packages/devtools-chrome`) and Firefox (`packages/devtools-firefox`). With the extension, the app needs no import at all: the extension installs the hook before the page's scripts run, and a **Strator** tab appears in the browser devtools.
+The same panel is available as a DevTools extension for Chrome (`packages/devtools-chrome`) and Firefox (`packages/devtools-firefox`). Every [GitHub release](https://github.com/strator-dev/strator/releases/latest) has both as zips to download, and [strator.dev/devtools](https://strator.dev/devtools/) explains how to install them. With the extension, the app needs no import at all: the extension installs the hook before the page's scripts run, and a **Strator** tab appears in the browser devtools.
 
 ## How it works
 
